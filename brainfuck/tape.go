@@ -51,6 +51,17 @@ func (t *Tape) PushWhile() (bool, error) {
 	return true, nil
 }
 
+func (t *Tape) PopWhile() (bool, error) {
+	var while_start int
+	while_start, t.WhileIndexStack = t.WhileIndexStack[len(t.WhileIndexStack)-1], t.WhileIndexStack[:len(t.WhileIndexStack)-1]
+
+	if !t.InBounds(while_start) {
+		return false, fmt.Errorf("InstructionPointer [%d] from while stack is out of bounds (Instruction length: [%d]", while_start, len(t.Instructions))
+	}
+
+	return true, nil
+}
+
 func (t *Tape) AdvanceToWhileEnd() (bool, error) {
 	if !t.InBounds(t.InstructionPointer + 1) {
 		return false, fmt.Errorf("Failed to advance to OP_WHILE_END instruction. Tape end reached.")

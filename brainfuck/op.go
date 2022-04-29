@@ -2,6 +2,7 @@ package brainfuck
 
 import (
 	"fmt"
+	//"os"
 )
 
 // The OPs for Brainfuck. Also in here are OP sets for predefined functions. I
@@ -131,6 +132,10 @@ func (o OP) Execute(tape *Tape, memory *Memory) (bool, error) {
 				// Don't advance since we just moved the tape pointer directly to OP_WHILE
 				return true, nil
 			}
+			// Value is zero, we're escaping the loop, pop the while stack
+			if ok, err := tape.PopWhile(); !ok {
+				return false, fmt.Errorf("OP_WHILE_END at tape index [%d] failed to escape scope. %v", tape.InstructionPointer, err)
+			}
 		} else {
 			return false, fmt.Errorf("OP_WHILE at tape index [%d] failed to get current memory cell at index [%d] during OP_WHILE evaluation. %v", memory.MemoryPointer, tape.InstructionPointer, err)
 		}
@@ -143,6 +148,7 @@ func (o OP) Execute(tape *Tape, memory *Memory) (bool, error) {
 			return false, fmt.Errorf("OP_BOOKMARK at tape index [%d] failed to store. %v", tape.InstructionPointer, err)
 		}
 	case NO_OP:
+		// fmt.Fprintf(os.Stderr, "MACHINE STATE:\nMEMORY DUMP: %v\nMEMORY POINTER: %v\nINSTRUCTION DUMP: %v\nINSTRUCTION POINTER: %v\nWHILE STACK: %v\n", memory.Cells, memory.MemoryPointer, tape.Instructions, tape.InstructionPointer, tape.WhileIndexStack)
 	default:
 		panic(fmt.Sprintf("Unknown OP [%s] encountered!", o))
 	}

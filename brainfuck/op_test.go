@@ -207,6 +207,20 @@ func Test_OP_WHILE_END(t *testing.T) {
 		}
 	}
 
+	mem.Cells[0] = 0
+	tape.PushWhile()
+	tape.Instructions = append(tape.Instructions, OP("#"))
+	tape.InstructionPointer = 2
+
+	if ok, err := OP("]").Execute(tape, mem); !ok {
+		t.Errorf("Unexpected failure when calling OP_WHILE_END.Execute(). %v", err)
+	}
+	if len(tape.WhileIndexStack) != 0 {
+		t.Errorf("While index stack [%d] does not have expected length [1]", len(tape.WhileIndexStack))
+	}
+	if tape.InstructionPointer != 3 {
+		t.Errorf("Instruction pointer [%d] is not at expected value [0]", tape.InstructionPointer)
+	}
 }
 
 func Test_OP_JUMP(t *testing.T) {

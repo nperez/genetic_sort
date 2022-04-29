@@ -51,7 +51,7 @@ func TestGetCurrentInstruction(t *testing.T) {
 
 func TestWhileBlocks(t *testing.T) {
 
-	tape := NewTape(SET_TO_ZERO.ToOPs())
+	tape := NewTape(OPS("[[-]]").ToOPs())
 
 	if ok, err := tape.PushWhile(); !ok {
 		t.Errorf("Unexpected failure when calling Tape.PushWhile(). %v", err)
@@ -62,7 +62,7 @@ func TestWhileBlocks(t *testing.T) {
 	if ok, err := tape.PushWhile(); ok {
 		t.Errorf("Unexpected success when calling Tape.PushWhile().")
 	} else {
-		if err.Error() != "Failed to store current InstructionPointer [999] on while stack. Out of bounds (Instruction length: [3]" {
+		if err.Error() != "Failed to store current InstructionPointer [999] on while stack. Out of bounds (Instruction length: [5]" {
 			t.Errorf("Error string doesn't match: %v", err)
 		}
 	}
@@ -73,7 +73,7 @@ func TestWhileBlocks(t *testing.T) {
 		t.Errorf("Unexpected failure when calling Tape.AdvanceToWhileEnd(). %v", err)
 	}
 
-	if tape.InstructionPointer != 2 {
+	if tape.InstructionPointer != 3 {
 		t.Errorf("Instruction pointer [%d] is not at expected value [1]", tape.InstructionPointer)
 	}
 
@@ -93,7 +93,7 @@ func TestWhileBlocks(t *testing.T) {
 		t.Errorf("Instruction pointer [%d] is not at expected value [1]", tape.InstructionPointer)
 	}
 
-	tape.InstructionPointer = 2
+	tape.InstructionPointer = 4
 
 	if ok, err := tape.AdvanceToWhileEnd(); ok {
 		t.Errorf("Unexpected success when calling Tape.AdvanceToWhileEnd().")

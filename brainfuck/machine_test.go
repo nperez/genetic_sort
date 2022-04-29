@@ -92,6 +92,81 @@ func TestBasicMachineLoadRunRead(t *testing.T) {
 	}
 }
 
+func TestNestedLoopMachineLoadRunRead(t *testing.T) {
+
+	m := NewMachine("[[[-]+-]+-]>+", &MemoryConfig{CellCount: 100, UpperBound: 255, LowerBound: 0})
+
+	if ok, err := m.LoadMemory([]int{1}); !ok {
+		t.Errorf("Unexpected failure calling Machine.LoadMemory(). %v", err)
+	}
+
+	if ok, err := m.Run(); !ok {
+		t.Errorf("Unexpected failure calling Machine.Run(). %v \nINSTRUCTION COUNTER: %v \nMEMORY DUMP:\n%v\n", err, m.InstructionCount, m.Memory.Cells)
+	}
+
+	if ok, val, err := m.ReadMemory(2); !ok {
+		t.Errorf("Unexpected failure calling Machine.ReadMemory. %v", err)
+	} else {
+		if len(val) != 2 {
+			t.Errorf("Return values length [%d] is not 2", len(val))
+		}
+
+		if !reflect.DeepEqual(val, []int{0, 1}) {
+			t.Errorf("Returned value [%v] is not equal to expected [%v]", val, []int{0, 1})
+		}
+	}
+}
+
+func TestSimpleLoopWithPointerMovesLoadRunRead(t *testing.T) {
+
+	m := NewMachine("++++[>+>+>+>+<<<<-]", &MemoryConfig{CellCount: 100, UpperBound: 255, LowerBound: 0})
+
+	if ok, err := m.LoadMemory([]int{0}); !ok {
+		t.Errorf("Unexpected failure calling Machine.LoadMemory(). %v", err)
+	}
+
+	if ok, err := m.Run(); !ok {
+		t.Errorf("Unexpected failure calling Machine.Run(). %v \nINSTRUCTION COUNTER: %v \nMEMORY DUMP:\n%v\n", err, m.InstructionCount, m.Memory.Cells)
+	}
+
+	if ok, val, err := m.ReadMemory(5); !ok {
+		t.Errorf("Unexpected failure calling Machine.ReadMemory. %v", err)
+	} else {
+		if len(val) != 5 {
+			t.Errorf("Return values length [%d] is not 5", len(val))
+		}
+
+		if !reflect.DeepEqual(val, []int{0, 4, 4, 4, 4}) {
+			t.Errorf("Returned value [%v] is not equal to expected [%v]", val, []int{0, 4, 4, 4, 4})
+		}
+	}
+}
+
+func TestSimpleNestedLoopWithPointerMovesLoadRunRead(t *testing.T) {
+
+	m := NewMachine("++[#>++++[#>+>+>+>+<<<<-#]<-#]", &MemoryConfig{CellCount: 100, UpperBound: 255, LowerBound: 0})
+
+	if ok, err := m.LoadMemory([]int{0}); !ok {
+		t.Errorf("Unexpected failure calling Machine.LoadMemory(). %v", err)
+	}
+
+	if ok, err := m.Run(); !ok {
+		t.Errorf("Unexpected failure calling Machine.Run(). %v \nINSTRUCTION COUNTER: %v \nMEMORY DUMP:\n%v\n", err, m.InstructionCount, m.Memory.Cells)
+	}
+
+	if ok, val, err := m.ReadMemory(6); !ok {
+		t.Errorf("Unexpected failure calling Machine.ReadMemory. %v", err)
+	} else {
+		if len(val) != 6 {
+			t.Errorf("Return values length [%d] is not 6", len(val))
+		}
+
+		if !reflect.DeepEqual(val, []int{0, 0, 8, 8, 8, 8}) {
+			t.Errorf("Returned value [%v] is not equal to expected [%v]", val, []int{0, 0, 8, 8, 8, 8})
+		}
+	}
+}
+
 func TestHelloWorldMachineLoadRunRead(t *testing.T) {
 
 	m := NewMachine("++++++++[>++++[>++>+++>+++>+<<<<-]>+>+>->>+[<]<-]", &MemoryConfig{CellCount: 100, UpperBound: 255, LowerBound: 0})
@@ -111,8 +186,8 @@ func TestHelloWorldMachineLoadRunRead(t *testing.T) {
 			t.Errorf("Return values length [%d] is not 7", len(val))
 		}
 
-		if !reflect.DeepEqual(val, [...]int{0, 0, 72, 104, 88, 32, 8}) {
-			t.Errorf("Returned value [%v] is not equal to expected [%v]", val, [...]int{0, 0, 72, 104, 88, 32, 8})
+		if !reflect.DeepEqual(val, []int{0, 0, 72, 104, 88, 32, 8}) {
+			t.Errorf("Returned value [%v] is not equal to expected [%v]", val, []int{0, 0, 72, 104, 88, 32, 8})
 		}
 	}
 }

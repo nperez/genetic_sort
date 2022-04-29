@@ -31,6 +31,9 @@ require (
 	golang.org/x/sys v0.0.0-20190405154228-4b34438f7a67 // indirect
 	golang.org/x/tools v0.0.0-20190407030857-0fdf0c73855b // indirect
 	gopkg.in/yaml.v2 v2.2.2 // indirect
+	nickandperla.net/brainfuck v0.0.0
 )
 
-go 1.13
+replace nickandperla.net/brainfuck => ./brainfuck
+
+go 1.14

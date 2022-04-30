@@ -2,7 +2,7 @@ package brainfuck
 
 import (
 	"fmt"
-	//"os"
+	"os"
 )
 
 // The OPs for Brainfuck. Also in here are OP sets for predefined functions. I
@@ -35,27 +35,27 @@ import (
 
 // [-^+^] == very concise 0:N swap
 
-type OP string
+type OP byte
 type OPS string
 
 const (
-	OP_POINTER_LEFT  = OP("<")
-	OP_POINTER_RIGHT = OP(">")
-	OP_INC           = OP("+")
-	OP_DEC           = OP("-")
-	OP_WHILE         = OP("[")
-	OP_WHILE_END     = OP("]")
-	OP_JUMP          = OP("^")
-	OP_BOOKMARK      = OP("*")
-	NO_OP            = OP("#")
+	OP_POINTER_LEFT  = OP('<')
+	OP_POINTER_RIGHT = OP('>')
+	OP_INC           = OP('+')
+	OP_DEC           = OP('-')
+	OP_WHILE         = OP('[')
+	OP_WHILE_END     = OP(']')
+	OP_JUMP          = OP('^')
+	OP_BOOKMARK      = OP('*')
+	NO_OP            = OP('#')
 )
 
 const (
 	SET_TO_ZERO        = OPS(`[-]`)
 	FIND_ZERO_RIGHT    = OPS(`[>]`)
 	FIND_ZERO_LEFT     = OPS(`[<]`)
-	SWAP_RIGHT         = OPS(`*[>]^[-^+^]^[-^>+^]`)
-	SWAP_LEFT          = OPS(`*[>]^[-^+^]^[-^<+^]`)
+	SWAP_RIGHT         = OPS(`*[>]^[-^+^]>[-<+>]^[-^+^]`)
+	SWAP_LEFT          = OPS(`>*[>]^<[-^+^]>[-<+>]^[-^+^]`)
 	MOVE_TO_ZERO_RIGHT = OPS(`*[>]^[-^+^]`)
 	MOVE_TO_ZERO_LEFT  = OPS(`*[<]^[-^+^]`)
 )
@@ -83,12 +83,14 @@ var PREFAB_OPSETS [7]OPS = [...]OPS{
 }
 
 func (o OPS) ToOPs() []OP {
-	ops := []OP{}
-	for _, r := range o {
-		ops = append(ops, OP(r))
+	ops := make([]OP, len(o))
+	for i := 0; i < len(o); i++ {
+		ops[i] = OP(o[i])
 	}
 	return ops
 }
+
+var DEBUG bool = false
 
 func (o OP) Execute(tape *Tape, memory *Memory) (bool, error) {
 	switch o {
@@ -148,9 +150,11 @@ func (o OP) Execute(tape *Tape, memory *Memory) (bool, error) {
 			return false, fmt.Errorf("OP_BOOKMARK at tape index [%d] failed to store. %v", tape.InstructionPointer, err)
 		}
 	case NO_OP:
-		// fmt.Fprintf(os.Stderr, "MACHINE STATE:\nMEMORY DUMP: %v\nMEMORY POINTER: %v\nINSTRUCTION DUMP: %v\nINSTRUCTION POINTER: %v\nWHILE STACK: %v\n", memory.Cells, memory.MemoryPointer, tape.Instructions, tape.InstructionPointer, tape.WhileIndexStack)
+		if DEBUG {
+			fmt.Fprintf(os.Stderr, "\n---\nMACHINE STATE:\nMEMORY DUMP: %v\nMEMORY POINTER: %v\nINSTRUCTION DUMP: %v\nINSTRUCTION POINTER: %v\nWHILE STACK: %v\nBOOKMARK: %v\n", memory.Cells, memory.MemoryPointer, tape.Instructions, tape.InstructionPointer, tape.WhileIndexStack, memory.BookmarkRegister)
+		}
 	default:
-		panic(fmt.Sprintf("Unknown OP [%s] encountered!", o))
+		panic(fmt.Sprintf("Unknown OP [%v] encountered!", o))
 	}
 
 	if !tape.Advance() {

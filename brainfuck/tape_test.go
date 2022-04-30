@@ -29,7 +29,7 @@ func TestGetCurrentInstruction(t *testing.T) {
 			t.Errorf("GetCurrentInstruction returned ok but with a defined err |%v|", err)
 		}
 
-		if op != OP("[") {
+		if op != OP('[') {
 			t.Errorf("GetCurrentInstruction returned unexpected OP |%v|, expected OP |[|", op)
 		}
 	}

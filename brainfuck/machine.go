@@ -12,7 +12,7 @@ type Machine struct {
 
 func NewMachine(program string, config *MemoryConfig) *Machine {
 	return &Machine{
-		Tape:             NewTape(OPS(program).ToOPs()),
+		Tape:             NewTape(program),
 		Memory:           NewMemoryFromConfig(config),
 		InstructionCount: 0,
 	}
@@ -49,16 +49,11 @@ func (m *Machine) Run() (bool, error) {
 
 	halt := false
 	for !halt {
-		if ok, op, err := m.Tape.GetCurrentInstruction(); !ok {
+		if ok, err := m.Tape.Execute(m.Memory); !ok {
 			halt = true
 			exception = err
-		} else {
-			if ok, err := op.Execute(m.Tape, m.Memory); !ok {
-				halt = true
-				exception = err
-			}
-			m.InstructionCount = m.InstructionCount + 1
 		}
+		m.InstructionCount = m.InstructionCount + 1
 	}
 
 	if exception != nil {

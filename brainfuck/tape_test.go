@@ -6,14 +6,14 @@ import (
 )
 
 func TestNewTape(t *testing.T) {
-	tape := NewTape(SET_TO_ZERO.ToOPs())
+	tape := NewTape(SET_TO_ZERO)
 	if tape == nil {
 		t.Errorf("NewTape returned nil")
 	}
 }
 
 func TestTapeAdvance(t *testing.T) {
-	tape := NewTape(SET_TO_ZERO.ToOPs())
+	tape := NewTape(SET_TO_ZERO)
 	tape.Advance()
 	if tape.InstructionPointer != 1 {
 		t.Errorf("Advance apparently didn't increment the InstructionPointer [%d]", tape.InstructionPointer)
@@ -21,7 +21,7 @@ func TestTapeAdvance(t *testing.T) {
 }
 
 func TestGetCurrentInstruction(t *testing.T) {
-	tape := NewTape(SET_TO_ZERO.ToOPs())
+	tape := NewTape(SET_TO_ZERO)
 	if ok, op, err := tape.GetCurrentInstruction(); !ok {
 		t.Errorf("GetCurrentInstruction returned !ok with OP |%v| and err |%v|", op, err)
 	} else {
@@ -29,7 +29,7 @@ func TestGetCurrentInstruction(t *testing.T) {
 			t.Errorf("GetCurrentInstruction returned ok but with a defined err |%v|", err)
 		}
 
-		if op != OP('[') {
+		if op != OP_WHILE {
 			t.Errorf("GetCurrentInstruction returned unexpected OP |%v|, expected OP |[|", op)
 		}
 	}
@@ -51,7 +51,7 @@ func TestGetCurrentInstruction(t *testing.T) {
 
 func TestWhileBlocks(t *testing.T) {
 
-	tape := NewTape(OPS("[[-]]").ToOPs())
+	tape := NewTape("[[-]]")
 
 	if ok, err := tape.PushWhile(); !ok {
 		t.Errorf("Unexpected failure when calling Tape.PushWhile(). %v", err)
@@ -104,7 +104,7 @@ func TestWhileBlocks(t *testing.T) {
 	}
 
 	tape.InstructionPointer = 0
-	tape.Instructions = OPS("###").ToOPs()
+	tape.Instructions = "###"
 
 	if ok, err := tape.AdvanceToWhileEnd(); ok {
 		t.Errorf("Unexpected success when calling Tape.AdvanceToWhileEnd().")

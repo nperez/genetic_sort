@@ -1,35 +1,31 @@
 package genetic_sort
 
-import "math/rand"
+import (
+//"math/rand"
+)
 
 type Population struct {
+	ID             uint
 	Units          []*Unit
-	Survivors      []*Unit
-	Dead           []*Unit
 	MutationChance float32
-	Fitness        *Fitness
 }
 
 type PopulationConfig struct {
 	UnitCount      int
 	UnitConfig     *UnitConfig
-	MutationChange float32
-	Fitness        *Fitness
+	MutationChance float32
 }
 
 func NewPopulationFromConfig(config *PopulationConfig) *Population {
 	units := make([]*Unit, config.UnitCount)
 
-	for i := 0; i < unitCount; i++ {
+	for i := 0; i < config.UnitCount; i++ {
 		units[i] = NewUnitFromConfig(config.UnitConfig)
 	}
 
 	return &Population{
 		Units:          units,
-		Survivors:      make([]*Unit, unitCount),
-		Dead:           make([]*Unit, unitCount),
-		MutationChance: config.MutationChange,
-		Fitness:        config.Fitness,
+		MutationChance: config.MutationChance,
 	}
 }
 
@@ -51,52 +47,52 @@ func NewPopulationFromConfig(config *PopulationConfig) *Population {
 //  Create new memeber of the population with copied genes
 
 // Breed - Take the successful units and create new amalgam units to add to the population
-func (p *Population) Breed() {
-	for i := len(p.Survivors) - 1; i > 0; i-- {
-		j := rand.Intn(i + 1)
-		p.Survivors[i], p.Survivors[j] = p.Survivors[j], p.Survivors[i]
-	}
-	groupOne := p.Survivors[:len(p.Survivors)/2-1]
-	groupTwo := p.Survivors[(len(p.Survivors)/2-1)+1:]
-
-	if len(groupOne) < len(groupTwo) {
-		for groupIndex, survivor1 := range groupOne {
-			survivor2 := groupTwo[groupIndex]
-			newUnit := survivor1.Breed(survivor2, p.MutationChance)
-			p.Units = append(p.Units, newUnit, survivor1, survivor2)
-		}
-		p.Units = append(p.Units, groupTwo[len(groupOne)-1:])
-	} else if len(groupOne) > len(groupTwo) {
-		for groupIndex, survivor2 := range groupTwo {
-			survivor1 := groupOne[groupIndex]
-			newUnit := survivor2.Breed(survivor1, p.MutationChance)
-			p.Units = append(p.Units, newUnit, survivor2, survivor1)
-		}
-		p.Units = append(p.Units, groupOne[len(groupTwo)-1:])
-	} else {
-		for groupIndex, survivor2 := range groupTwo {
-			survivor1 := groupOne[groupIndex]
-			newUnit := survivor2.Breed(survivor1, p.MutationChance)
-			p.Units = append(p.Units, newUnit, survivor2, survivor1)
-		}
-	}
-
-	p.Survivors = make([]*Unit, 0)
-}
+//func (p *Population) Breed() {
+//	for i := len(p.Survivors) - 1; i > 0; i-- {
+//		j := rand.Intn(i + 1)
+//		p.Survivors[i], p.Survivors[j] = p.Survivors[j], p.Survivors[i]
+//	}
+//	groupOne := p.Survivors[:len(p.Survivors)/2-1]
+//	groupTwo := p.Survivors[(len(p.Survivors)/2-1)+1:]
+//
+//	if len(groupOne) < len(groupTwo) {
+//		for groupIndex, survivor1 := range groupOne {
+//			survivor2 := groupTwo[groupIndex]
+//			newUnit := survivor1.Breed(survivor2, p.MutationChance)
+//			p.Units = append(p.Units, newUnit, survivor1, survivor2)
+//		}
+//		p.Units = append(p.Units, groupTwo[len(groupOne)-1:]...)
+//	} else if len(groupOne) > len(groupTwo) {
+//		for groupIndex, survivor2 := range groupTwo {
+//			survivor1 := groupOne[groupIndex]
+//			newUnit := survivor2.Breed(survivor1, p.MutationChance)
+//			p.Units = append(p.Units, newUnit, survivor2, survivor1)
+//		}
+//		p.Units = append(p.Units, groupOne[len(groupTwo)-1:]...)
+//	} else {
+//		for groupIndex, survivor2 := range groupTwo {
+//			survivor1 := groupOne[groupIndex]
+//			newUnit := survivor2.Breed(survivor1, p.MutationChance)
+//			p.Units = append(p.Units, newUnit, survivor2, survivor1)
+//		}
+//	}
+//
+//	p.Survivors = make([]*Unit, 0)
+//}
 
 // ProcessGeneration - Iterate the current units and check their fitness
 func (p *Population) ProcessGeneration() {
-	for unit := range p.Units {
-		currentReport = unit.CurrentReport()
-
-		p.Fitness.Process(currentReport)
-
-		if currentReport.Alive {
-			p.Survivors = append(p.Survivors, unit)
-		} else {
-			p.Dead = append(p.Dead, unit)
-		}
-	}
-
-	p.Units = make([]*Unit, 0)
+	//	for i, unit := range p.Units {
+	//		currentReport := unit.CurrentReport()
+	//
+	//		p.Fitness.Process(currentReport)
+	//
+	//		if currentReport.Alive {
+	//			p.Survivors = append(p.Survivors, unit)
+	//		} else {
+	//			p.Dead = append(p.Dead, unit)
+	//		}
+	//	}
+	//
+	//	p.Units = make([]*Unit, 0)
 }

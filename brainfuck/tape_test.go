@@ -12,6 +12,21 @@ func TestNewTape(t *testing.T) {
 	}
 }
 
+func TestTapeReset(t *testing.T) {
+	tape := NewTape(SET_TO_ZERO)
+	tape.Advance()
+	tape.PushWhile()
+	tape.Reset()
+	if tape.InstructionPointer != 0 {
+		t.Errorf("Reset didn't reset InstructionPointer: %v", tape.InstructionPointer)
+	}
+
+	if len(tape.WhileIndexStack) != 0 {
+		t.Errorf("Reset didn't reset WhileIndexStack: %v", tape.WhileIndexStack)
+	}
+
+}
+
 func TestTapeAdvance(t *testing.T) {
 	tape := NewTape(SET_TO_ZERO)
 	tape.Advance()

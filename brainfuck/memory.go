@@ -26,6 +26,14 @@ func NewMemoryFromConfig(c *MemoryConfig) *Memory {
 	}
 }
 
+func (m *Memory) Reset() {
+	for i := 0; i < len(m.Cells); i++ {
+		m.Cells[i] = 0
+	}
+	m.MemoryPointer = 0
+	m.BookmarkRegister = 0
+}
+
 func (m *Memory) GetCurrentCell() (bool, int, error) {
 	if ok := m.MemoryInBounds(m.MemoryPointer); !ok {
 		return false, -1, fmt.Errorf("Memory pointer [%d] out of bounds (Memory length: [%d])", m.MemoryPointer, len(m.Cells))

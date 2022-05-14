@@ -21,6 +21,11 @@ func NewTape(instructions string) *Tape {
 	}
 }
 
+func (t *Tape) Reset() {
+	t.InstructionPointer = 0
+	t.WhileIndexStack = t.WhileIndexStack[:0]
+}
+
 func (t *Tape) Advance() bool {
 	if t.InBounds(t.InstructionPointer + 1) {
 		t.InstructionPointer = t.InstructionPointer + 1

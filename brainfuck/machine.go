@@ -7,14 +7,33 @@ import (
 type Machine struct {
 	Tape             *Tape
 	Memory           *Memory
-	InstructionCount int
+	Config           *MachineConfig
+	InstructionCount uint
 }
 
-func NewMachine(program string, config *MemoryConfig) *Machine {
+type MachineConfig struct {
+	MaxInstructionExecutionCount uint
+	MemoryConfig                 *MemoryConfig
+}
+
+func NewMachine(mc *MachineConfig) *Machine {
 	return &Machine{
-		Tape:             NewTape(program),
-		Memory:           NewMemoryFromConfig(config),
-		InstructionCount: 0,
+		Memory: NewMemoryFromConfig(mc.MemoryConfig),
+		Config: mc,
+	}
+}
+
+func (m *Machine) Reset() {
+	m.Tape.Reset()
+	m.Memory.Reset()
+}
+
+func (m *Machine) LoadProgram(instructions string) {
+	if m.Tape == nil {
+		m.Tape = NewTape(instructions)
+	} else {
+		m.Tape.Instructions = instructions
+		m.Tape.Reset()
 	}
 }
 
@@ -54,6 +73,10 @@ func (m *Machine) Run() (bool, error) {
 			exception = err
 		}
 		m.InstructionCount = m.InstructionCount + 1
+		if m.InstructionCount >= m.Config.MaxInstructionExecutionCount {
+			halt = true
+			exception = fmt.Errorf("Instruction execution count limit reached: %v", m.InstructionCount)
+		}
 	}
 
 	if exception != nil {

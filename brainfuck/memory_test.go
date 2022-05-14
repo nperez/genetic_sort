@@ -11,6 +11,28 @@ func TestNewMemoryFromConfig(t *testing.T) {
 	}
 }
 
+func TestMemoryReset(t *testing.T) {
+	memory := NewMemoryFromConfig(&MemoryConfig{CellCount: 100, LowerBound: 0, UpperBound: 255})
+	memory.Cells[0] = 1
+	memory.MemoryPointer = 20
+	memory.BookmarkRegister = 21
+
+	memory.Reset()
+	for i := 0; i < len(memory.Cells); i++ {
+		if memory.Cells[i] != 0 {
+			t.Fatalf("Memory cells didn't reset: %v", memory.Cells)
+		}
+	}
+
+	if memory.MemoryPointer != 0 {
+		t.Errorf("Memory pointer didn't reset: %v", memory.MemoryPointer)
+	}
+
+	if memory.BookmarkRegister != 0 {
+		t.Errorf("Memory bookmark register didn't reset: %v", memory.BookmarkRegister)
+	}
+}
+
 func TestIncrement(t *testing.T) {
 	memory := NewMemoryFromConfig(&MemoryConfig{CellCount: 100, LowerBound: 0, UpperBound: 255})
 	if ok, err := memory.Increment(); !ok {

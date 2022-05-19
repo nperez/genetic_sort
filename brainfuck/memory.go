@@ -5,21 +5,21 @@ import (
 )
 
 type MemoryConfig struct {
-	CellCount  int
-	UpperBound int
-	LowerBound int
+	CellCount  uint
+	UpperBound uint
+	LowerBound uint
 }
 
 type Memory struct {
-	Cells            []int
+	Cells            []uint
 	MemoryConfig     *MemoryConfig
-	MemoryPointer    int
-	BookmarkRegister int
+	MemoryPointer    uint
+	BookmarkRegister uint
 }
 
 func NewMemoryFromConfig(c *MemoryConfig) *Memory {
 	return &Memory{
-		Cells:            make([]int, c.CellCount),
+		Cells:            make([]uint, c.CellCount),
 		MemoryConfig:     c,
 		MemoryPointer:    0,
 		BookmarkRegister: 0,
@@ -34,15 +34,15 @@ func (m *Memory) Reset() {
 	m.BookmarkRegister = 0
 }
 
-func (m *Memory) GetCurrentCell() (bool, int, error) {
+func (m *Memory) GetCurrentCell() (bool, uint, error) {
 	if ok := m.MemoryInBounds(m.MemoryPointer); !ok {
-		return false, -1, fmt.Errorf("Memory pointer [%d] out of bounds (Memory length: [%d])", m.MemoryPointer, len(m.Cells))
+		return false, 0, fmt.Errorf("Memory pointer [%d] out of bounds (Memory length: [%d])", m.MemoryPointer, len(m.Cells))
 	}
 	return true, m.Cells[m.MemoryPointer], nil
 }
 
-func (m *Memory) MemoryInBounds(new_val int) bool {
-	return new_val >= 0 && new_val <= len(m.Cells)-1
+func (m *Memory) MemoryInBounds(new_val uint) bool {
+	return new_val >= 0 && new_val <= uint(len(m.Cells)-1)
 }
 
 func (m *Memory) MovePointerLeft() (bool, error) {
@@ -84,7 +84,7 @@ func (m *Memory) BookmarkJump() (bool, error) {
 	return true, nil
 }
 
-func (m *Memory) CellInBounds(new_val int) bool {
+func (m *Memory) CellInBounds(new_val uint) bool {
 	return new_val >= m.MemoryConfig.LowerBound && new_val <= m.MemoryConfig.UpperBound
 }
 

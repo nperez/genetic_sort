@@ -4,6 +4,8 @@ import (
 	"fmt"
 )
 
+var ErrMaxInstructionExecutionCountReached error = fmt.Errorf("Instruction execution count limit reached")
+
 type Machine struct {
 	Tape             *Tape
 	Memory           *Memory
@@ -37,7 +39,7 @@ func (m *Machine) LoadProgram(instructions string) {
 	}
 }
 
-func (m *Machine) LoadMemory(input []int) (bool, error) {
+func (m *Machine) LoadMemory(input []uint) (bool, error) {
 
 	if len(input) > len(m.Memory.Cells) {
 		return false, fmt.Errorf("Failed to load memory. Input length [%d] is greater than memory capacity [%d]", len(input), len(m.Memory.Cells))
@@ -53,10 +55,10 @@ func (m *Machine) LoadMemory(input []int) (bool, error) {
 	return true, nil
 }
 
-func (m *Machine) ReadMemory(count int) (bool, []int, error) {
+func (m *Machine) ReadMemory(count uint) (bool, []uint, error) {
 
-	if count > len(m.Memory.Cells) {
-		return false, []int{}, fmt.Errorf("Failed to read memory. Read count [%d] is greater than memory capacity [%d]", count, len(m.Memory.Cells))
+	if count > uint(len(m.Memory.Cells)) {
+		return false, []uint{}, fmt.Errorf("Failed to read memory. Read count [%d] is greater than memory capacity [%d]", count, len(m.Memory.Cells))
 	}
 
 	return true, m.Memory.Cells[0:count], nil
@@ -75,7 +77,7 @@ func (m *Machine) Run() (bool, error) {
 		m.InstructionCount = m.InstructionCount + 1
 		if m.InstructionCount >= m.Config.MaxInstructionExecutionCount {
 			halt = true
-			exception = fmt.Errorf("Instruction execution count limit reached: %v", m.InstructionCount)
+			exception = ErrMaxInstructionExecutionCountReached
 		}
 	}
 

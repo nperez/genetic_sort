@@ -9,7 +9,7 @@ import (
 	str "strings"
 
 	cp "github.com/jinzhu/copier"
-	gorm "gorm.io/gorm"
+	//gorm "gorm.io/gorm"
 	"log"
 	bf "nickandperla.net/brainfuck"
 )
@@ -22,10 +22,12 @@ type Instruction struct {
 	ID           uint
 	UnitID       uint
 	Mutations    []*Mutation
-	Age          int
+	Age          uint
 	InitialOpSet string `gorm:"type:blob"`
 	Ops          string `gorm:"type:blob"`
 }
+
+type Instructions []*Instruction
 
 func NewInstructionFromConfig(config *InstructionConfig) *Instruction {
 	return NewRandomInstruction(config.OpSetCount)
@@ -40,52 +42,106 @@ func NewRandomInstruction(opSetCount int) *Instruction {
 		sb.WriteString(bf.PREFAB_OPSETS[rand.Intn(len(bf.PREFAB_OPSETS))])
 	}
 
-	instruction.Ops = sb.String()
-	instruction.InitialOpSet = sb.String()
+	instruction.Ops = string(makeOpsSmall(sb.String()))
+	instruction.InitialOpSet = string(makeOpsSmall(sb.String()))
 	return instruction
 }
 
-func opsToSymbols(ops string) []byte {
-	ret := make([]byte, len(ops))
-	for i, op := range ops {
-		switch byte(op) {
-		case bf.OP_POINTER_LEFT:
-			ret[i] = 1
-		case bf.OP_POINTER_RIGHT:
-			ret[i] = 2
-		case bf.OP_INC:
-			ret[i] = 3
-		case bf.OP_DEC:
-			ret[i] = 4
-		case bf.OP_WHILE:
-			ret[i] = 5
-		case bf.OP_WHILE_END:
-			ret[i] = 6
-		case bf.OP_JUMP:
-			ret[i] = 7
-		case bf.OP_BOOKMARK:
-			ret[i] = 8
-		case bf.NO_OP:
-			ret[i] = 9
-		default:
-			panic(fmt.Sprintf("Unknown OP [%v] encountered!", op))
-		}
-	}
+func NewInstruction(ops string) *Instruction {
+	instruction := &Instruction{Age: 0}
+	instruction.Ops = string(makeOpsSmall(ops))
+	instruction.InitialOpSet = string(makeOpsSmall(ops))
+	return instruction
+}
 
-	return ret
+func (ins Instructions) OpsCount() uint {
+	var count uint
+	for _, i := range ins {
+		count += uint(len(i.Ops) * 2)
+	}
+	return count
+}
+
+func (ins Instructions) ToProgram() string {
+	program := make([]byte, ins.OpsCount())
+	var offset uint
+	for _, i := range ins {
+		sub := i.ToProgram()
+		copy(program[offset:], sub)
+		offset += uint(len(sub))
+	}
+	return string(program[:offset])
+}
+
+func (i *Instruction) ToProgram() []byte {
+	return makeOpsBig(i.Ops)
 }
 
 const (
-	DEBUG = false
+	DEBUG = true
 )
 
-func makeOpsSmall(stuff []byte) []byte {
-	buffer := bytes.NewBuffer(stuff)
-	window := make([]byte, 8)
-	compressBuffer := bytes.NewBuffer([]byte{})
+func makeOpsBig(stuff string) []byte {
+	buffer := bytes.NewBuffer([]byte(stuff))
+
+	var sb str.Builder
 
 	if DEBUG {
-		log.Printf("Making things small. Count: %v, Original: %v", len(stuff), stuff)
+		log.Printf("Making things big. Count: %v, Original: %v", len(stuff), stuff)
+	}
+	for {
+		var packed uint32 = 0
+		err := bin.Read(buffer, bin.BigEndian, &packed)
+		if err == io.EOF {
+			break
+		}
+		for i := 0; i < 8; i++ {
+			symbol := ((15 << (28 - (4 * i))) & packed) >> (28 - (4 * i))
+			switch symbol {
+			case 0:
+				break
+			case 1:
+				sb.WriteRune(bf.OP_POINTER_LEFT)
+			case 2:
+				sb.WriteRune(bf.OP_POINTER_RIGHT)
+			case 3:
+				sb.WriteRune(bf.OP_INC)
+			case 4:
+				sb.WriteRune(bf.OP_DEC)
+			case 5:
+				sb.WriteRune(bf.OP_WHILE)
+			case 6:
+				sb.WriteRune(bf.OP_WHILE_END)
+			case 7:
+				sb.WriteRune(bf.OP_JUMP)
+			case 8:
+				sb.WriteRune(bf.OP_BOOKMARK)
+			case 9:
+				sb.WriteRune(bf.NO_OP)
+			default:
+				panic(fmt.Sprintf("Unknown symbol [%v] encountered!", symbol))
+			}
+		}
+		if err == io.ErrUnexpectedEOF {
+			break
+		}
+	}
+
+	uncompressed := []byte(sb.String())
+
+	if DEBUG {
+		log.Printf("Making things big. Count: %v, Unpacked: %v", len(uncompressed), uncompressed)
+	}
+	return uncompressed
+}
+
+func makeOpsSmall(stuff string) []byte {
+	buffer := bytes.NewBuffer([]byte(stuff))
+	window := make([]byte, 8)
+	compressBuffer := bytes.NewBuffer(make([]byte, 0, len(stuff)/2+1))
+
+	if DEBUG {
+		log.Printf("Making things small. Count: %v, Original: %v", len(stuff), []byte(stuff))
 	}
 	for {
 		var packed uint32
@@ -94,24 +150,34 @@ func makeOpsSmall(stuff []byte) []byte {
 			break
 		}
 		for i, bits := range window {
-			switch i % 8 {
+			var symbol byte
+			switch byte(bits) {
 			case 0:
-				packed += 0b11110000000000000000000000000000 & (uint32(bits) << 28)
-			case 1:
-				packed += 0b00001111000000000000000000000000 & (uint32(bits) << 24)
-			case 2:
-				packed += 0b00000000111100000000000000000000 & (uint32(bits) << 20)
-			case 3:
-				packed += 0b00000000000011110000000000000000 & (uint32(bits) << 16)
-			case 4:
-				packed += 0b00000000000000001111000000000000 & (uint32(bits) << 12)
-			case 5:
-				packed += 0b00000000000000000000111100000000 & (uint32(bits) << 8)
-			case 6:
-				packed += 0b00000000000000000000000011110000 & (uint32(bits) << 4)
-			case 7:
-				packed += 0b00000000000000000000000000001111 & (uint32(bits))
+				break
+			case bf.OP_POINTER_LEFT:
+				symbol = 1
+			case bf.OP_POINTER_RIGHT:
+				symbol = 2
+			case bf.OP_INC:
+				symbol = 3
+			case bf.OP_DEC:
+				symbol = 4
+			case bf.OP_WHILE:
+				symbol = 5
+			case bf.OP_WHILE_END:
+				symbol = 6
+			case bf.OP_JUMP:
+				symbol = 7
+			case bf.OP_BOOKMARK:
+				symbol = 8
+			case bf.NO_OP:
+				symbol = 9
+			default:
+				panic(fmt.Sprintf("Unknown OP [%v] encountered!", bits))
 			}
+
+			packed += (15 << (28 - (4 * (i % 8)))) & (uint32(symbol) << (28 - (4 * (i % 8))))
+			window[i] = 0
 		}
 		bin.Write(compressBuffer, bin.BigEndian, packed)
 	}
@@ -121,12 +187,6 @@ func makeOpsSmall(stuff []byte) []byte {
 		log.Printf("Making things small. Count: %v, Packed: %v", len(compressed), compressed)
 	}
 	return compressed
-}
-
-func (i *Instruction) BeforeSave(tx *gorm.DB) error {
-	i.Ops = string(makeOpsSmall(opsToSymbols(i.Ops)))
-	i.InitialOpSet = string(makeOpsSmall(opsToSymbols(i.InitialOpSet)))
-	return nil
 }
 
 func (i *Instruction) Clone() *Instruction {

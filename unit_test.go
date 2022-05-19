@@ -5,7 +5,7 @@ import (
 	rnd "math/rand"
 	mop "reflect"
 	//re "regexp"
-	str "strings"
+	//str "strings"
 	test "testing"
 )
 
@@ -22,14 +22,9 @@ func TestNewUnitFuncs(t *test.T) {
 
 	unit1 := NewUnitFromConfig(config)
 
-	var sb str.Builder
-	for _, instruction := range unit1.Instructions {
-		sb.WriteString(instruction.Ops)
-	}
-
-	if SEED42_INSTRUCTION_STRING != sb.String() {
+	if SEED42_INSTRUCTION_STRING != unit1.Instructions.ToProgram() {
 		t.Errorf("Unit instructions do not match expected:\nExpected: %v\nActual: %v ",
-			SEED42_INSTRUCTION_STRING, sb.String())
+			SEED42_INSTRUCTION_STRING, unit1.Instructions.ToProgram())
 	}
 
 	if len(unit1.Instructions) != 10 {
@@ -54,14 +49,9 @@ func TestUnitClone(t *test.T) {
 
 	unit2 := unit1.Clone()
 
-	var sb str.Builder
-	for _, instruction := range unit2.Instructions {
-		sb.WriteString(instruction.Ops)
-	}
-
-	if SEED42_INSTRUCTION_STRING != sb.String() {
+	if SEED42_INSTRUCTION_STRING != unit2.Instructions.ToProgram() {
 		t.Errorf("Unit instructions do not match expected:\nExpected: %v\nActual: %v ",
-			SEED42_INSTRUCTION_STRING, sb.String())
+			SEED42_INSTRUCTION_STRING, unit2.Instructions.ToProgram())
 	}
 
 	if len(unit2.Instructions) != 10 {

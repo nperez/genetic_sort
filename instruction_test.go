@@ -1,6 +1,7 @@
 package genetic_sort
 
 import (
+	bf "nickandperla.net/brainfuck"
 	mop "reflect"
 	re "regexp"
 	"testing"
@@ -18,13 +19,14 @@ func TestNewInstruction(t *testing.T) {
 	}
 
 	var matcher = re.MustCompile(`\s*[><\]\[+-^*#]+\s*`)
-	for i, op := range instruct1.Ops {
+	for _, op := range instruct1.ToProgram() {
 		if !matcher.MatchString(string(op)) {
-			t.Errorf("Somehow generated invalid machine ops: %v", instruct1.Ops)
+			t.Errorf("Somehow generated invalid machine ops: %v", string(instruct1.ToProgram()))
 		}
-		if instruct1.InitialOpSet[i] != byte(op) {
-			t.Errorf("InitialOpSet and Ops disagree at index [%v]. InitialOpSet: [%v], Ops: [%v]", i, instruct1.InitialOpSet[i], op)
-		}
+	}
+
+	if instruct1.InitialOpSet != instruct1.Ops {
+		t.Errorf("InitialOpSet and Ops disagree. InitialOpSet: [%v], Ops: [%v]", []byte(instruct1.InitialOpSet), []byte(instruct1.Ops))
 	}
 }
 
@@ -91,4 +93,32 @@ func TestInstructionAge(t *testing.T) {
 	if instruct1.Age != 1 {
 		t.Errorf("Age [%v] is not equal to 1", instruct1.Age)
 	}
+}
+
+func TestMakeOpsSmallAndBig(t *testing.T) {
+	ops := bf.MOVE_TO_ZERO_LEFT
+	compressed := makeOpsSmall(ops)
+	uncompressed := makeOpsBig(string(compressed))
+
+	if !mop.DeepEqual(ops, string(uncompressed)) {
+		t.Errorf("Failed to roundtrip Ops for database encoding.\nOrig: %v\nCompressed: %v\nUncompressed: %v\n",
+			ops, compressed, string(uncompressed))
+	}
+}
+
+func TestInstructionsToProgram(t *testing.T) {
+
+	var ins Instructions = make(Instructions, 3)
+	for i := 0; i < 3; i++ {
+		ins[i] = NewInstruction(bf.MOVE_TO_ZERO_LEFT)
+	}
+
+	move3x := `*[<]^[-^+^]*[<]^[-^+^]*[<]^[-^+^]`
+
+	check := ins.ToProgram()
+
+	if move3x != string(check) {
+		t.Errorf("Instructions.ToProgram() failed to produce expected program.\nGot: %v\nExpected: %v", string(check), move3x)
+	}
+
 }

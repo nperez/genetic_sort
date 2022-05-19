@@ -23,7 +23,7 @@ func TestPersist(t *t.T) {
 
 	db.AutoMigrate(&Population{}, &Unit{}, &Instruction{}, &Mutation{})
 
-	pop1 := NewPopulationFromConfig(&PopulationConfig{UnitCount: 100000, UnitConfig: &UnitConfig{MutationChance: 0.25, InstructionCount: 10, InstructionConfig: &InstructionConfig{OpSetCount: 10}, Lifespan: 100}})
+	pop1 := NewPopulationFromConfig(&PopulationConfig{UnitCount: 100, UnitConfig: &UnitConfig{MutationChance: 0.25, InstructionCount: 10, InstructionConfig: &InstructionConfig{OpSetCount: 10}, Lifespan: 100}})
 	db = db.Session(&gorm.Session{CreateBatchSize: 100})
 
 	db.Create(pop1)

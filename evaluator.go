@@ -3,6 +3,7 @@ package genetic_sort
 import (
 	"fmt"
 	"math/rand"
+
 	bf "nickandperla.net/brainfuck"
 )
 
@@ -61,6 +62,7 @@ func (e *Evaluator) Evaluate(u *Unit) *Evaluation {
 		if err != nil {
 			eval.MachineError = &err
 		}
+		eval.MachineRun = 1
 	}
 
 	ok, output, err := e.Machine.ReadMemory(e.Config.OutputCellCount)
@@ -92,7 +94,7 @@ func (e *Evaluator) Evaluate(u *Unit) *Evaluation {
 	inversions := merge_sort(copyOutput)
 	maxInversions := uint(len(copyOutput) * (len(copyOutput) - 1) / 2)
 
-	eval.Sortedness = byte(uint(100/maxInversions) * (maxInversions - inversions))
+	eval.Sortedness = byte(inversions / maxInversions)
 	eval.Input = makeTruncated(input)
 	eval.Output = makeTruncated(output)
 	eval.InstructionsExecuted = e.Machine.InstructionCount
@@ -127,21 +129,20 @@ func merge(a []uint, inversion0 uint) uint {
 	copyLeft := uint(0)
 	copyRight := uint(len(c) / 2)
 	current := uint(0)
-	high := uint(len(c) - 1)
 
-	for copyLeft <= copyRight-1 && copyRight <= high {
+	for copyLeft <= copyRight-1 && copyRight <= uint(len(c)-1) {
 		if c[copyLeft] <= c[copyRight] {
 			a[current] = c[copyLeft]
 			copyLeft++
 		} else {
 			a[current] = c[copyRight]
 			copyRight++
-			inversion1 += copyRight - copyLeft
+			inversion1 += uint(len(c)/2) - copyLeft
 		}
 		current++
 	}
 
-	for copyLeft <= copyRight-1 {
+	for copyLeft <= copyRight-1 && current <= uint(len(c)-1) {
 		a[current] = c[copyLeft]
 		current++
 		copyLeft++
@@ -154,15 +155,13 @@ func merge_sort(a []uint) uint {
 	inversions := uint(0)
 	if len(a) > 1 {
 		mid := len(a) / 2
-		if mid >= 1<<11 {
-			reply := make(chan uint, 0)
-			go func() {
-				reply <- merge_sort(a[mid:])
-			}()
-			inv1 := merge_sort(a[:mid])
-			inv2 := <-reply
-			return merge(a, inv1+inv2)
-		}
+		reply := make(chan uint, 0)
+		go func() {
+			reply <- merge_sort(a[mid:])
+		}()
+		inv1 := merge_sort(a[:mid])
+		inv2 := <-reply
+		return merge(a, inv1+inv2)
 	}
 	return inversions
 }

@@ -2,6 +2,7 @@ package genetic_sort
 
 import (
 	"fmt"
+	"log"
 	"math/rand"
 
 	bf "nickandperla.net/brainfuck"
@@ -11,10 +12,10 @@ import (
 // that are used to determine survival. First, is if there is any kind of
 // Machine error, then the Unit didn't survive. Second, is set fidelity where
 // the intersection of input values and output values is calculated. Third is
-// sortedness of the output values by measuring inversion, see paper.pdf.
-// Fourth is instruction execution count. An evaluation just represent a
-// snapshot of a Unit's survivability. Determining if a Unit has survived is
-// the responsibility of the Selector type.
+// sortedness of the output values by measuring inversions Fourth is
+// instruction execution count. An evaluation just represent a snapshot of a
+// Unit's survivability. Determining if a Unit has survived is the
+// responsibility of the Selector type.
 
 type Evaluation struct {
 	ID                   uint
@@ -94,7 +95,11 @@ func (e *Evaluator) Evaluate(u *Unit) *Evaluation {
 	inversions := merge_sort(copyOutput)
 	maxInversions := uint(len(copyOutput) * (len(copyOutput) - 1) / 2)
 
-	eval.Sortedness = byte(inversions / maxInversions)
+	if DEBUG {
+		log.Printf("Inversions: %v\nMax Inversions: %v", inversions, maxInversions)
+	}
+
+	eval.Sortedness = byte(-(int((float32(inversions)/float32(maxInversions))*100) - 100))
 	eval.Input = makeTruncated(input)
 	eval.Output = makeTruncated(output)
 	eval.InstructionsExecuted = e.Machine.InstructionCount

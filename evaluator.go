@@ -25,7 +25,7 @@ type Evaluation struct {
 	Sortedness           byte
 	InstructionCount     uint
 	InstructionsExecuted uint
-	MachineError         *error
+	MachineError         *string
 	Input                []byte `gorm:"type:blob"`
 	Output               []byte `gorm:"type:blob"`
 }
@@ -61,8 +61,10 @@ func (e *Evaluator) Evaluate(u *Unit) *Evaluation {
 
 	if ok, err := e.Machine.Run(); !ok {
 		if err != nil {
-			eval.MachineError = &err
+			var msg string = err.Error()
+			eval.MachineError = &msg
 		}
+	} else {
 		eval.MachineRun = 1
 	}
 

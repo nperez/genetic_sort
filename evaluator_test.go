@@ -34,11 +34,58 @@ func makeEvaluatorAndUnit() (*Evaluator, *Unit) {
 }
 
 func TestNewEvaluator(t *test.T) {
+	evaluator, _ := makeEvaluatorAndUnit()
+
+	if evaluator == nil {
+		t.Errorf("NewEvaluator() returned nil")
+	}
+}
+
+func TestEvaluate(t *test.T) {
 	rnd.Seed(42)
 	evaluator, unit := makeEvaluatorAndUnit()
 
+	if evaluator == nil {
+		t.Errorf("NewEvaluator() returned nil")
+	}
+
 	result := evaluator.Evaluate(unit)
+
+	if result == nil {
+		t.Errorf("Evaluator.Evaluate() returned nil")
+	}
+
+	if result.ID != 0 {
+		t.Errorf("Unexpected Evaluation.ID: %v", result.ID)
+	}
+
+	if result.UnitID != unit.ID {
+		t.Errorf("Evaluation.UnitID [%v] doesn't match unit.ID [%v]",
+			result.UnitID, unit.ID)
+	}
+
+	if result.MachineRun != 1 {
+		t.Errorf("Unexpected MachineRun value [%v], expected 1", result.MachineRun)
+	}
+
+	if result.MachineError != nil {
+		t.Errorf("Unexpected MachineError: %v\nExpected: nil", result.MachineError)
+	}
+
+	if result.SetFidelity != 80 {
+		t.Errorf("Unexpected SetFidelity: [%v], expected: 80", result.SetFidelity)
+	}
+
+	if result.Sortedness != 38 {
+		t.Errorf("Unexpected Sortedness: [%v], expected: 38", result.Sortedness)
+	}
+
+	if result.InstructionsExecuted != 156 {
+		t.Errorf("Unexpected InstructionsExecuted: [%v], expected: 156", result.InstructionsExecuted)
+	}
+
 	log.Printf("Evaluation: %v", result)
+
 }
 
 func TestSortedness(t *test.T) {

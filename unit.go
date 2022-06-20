@@ -24,6 +24,7 @@ type Unit struct {
 	Lifespan       uint
 	MutationChance float32
 	Alive          bool
+	Evaluations    []*Evaluation
 }
 
 func NewUnitFromConfig(config *UnitConfig) *Unit {

@@ -27,7 +27,7 @@ func (t *Tape) Reset() {
 }
 
 func (t *Tape) Advance() bool {
-	if t.InBounds(t.InstructionPointer + 1) {
+	if t.InstructionPointer < len(t.Instructions)-1 {
 		t.InstructionPointer = t.InstructionPointer + 1
 		return true
 	} else {
@@ -36,7 +36,7 @@ func (t *Tape) Advance() bool {
 }
 
 func (t *Tape) GetCurrentInstruction() (bool, byte, error) {
-	if !t.InBounds(t.InstructionPointer) {
+	if t.InstructionPointer < 0 || t.InstructionPointer > len(t.Instructions)-1 {
 		if t.InstructionPointer == len(t.Instructions)-1 {
 			return false, NO_OP, nil
 		}
@@ -45,12 +45,8 @@ func (t *Tape) GetCurrentInstruction() (bool, byte, error) {
 	return true, t.Instructions[t.InstructionPointer], nil
 }
 
-func (t *Tape) InBounds(new_val int) bool {
-	return new_val >= 0 && new_val <= len(t.Instructions)-1
-}
-
 func (t *Tape) PushWhile() (bool, error) {
-	if !t.InBounds(t.InstructionPointer) {
+	if t.InstructionPointer < 0 || t.InstructionPointer > len(t.Instructions)-1 {
 		return false, fmt.Errorf("Failed to store current InstructionPointer [%d] on while stack. Out of bounds (Instruction length: [%d]", t.InstructionPointer, len(t.Instructions))
 	}
 	t.WhileIndexStack = append(t.WhileIndexStack, t.InstructionPointer)
@@ -61,7 +57,7 @@ func (t *Tape) PopWhile() (bool, error) {
 	var while_start int
 	while_start, t.WhileIndexStack = t.WhileIndexStack[len(t.WhileIndexStack)-1], t.WhileIndexStack[:len(t.WhileIndexStack)-1]
 
-	if !t.InBounds(while_start) {
+	if while_start < 0 || while_start > len(t.Instructions)-1 {
 		return false, fmt.Errorf("InstructionPointer [%d] from while stack is out of bounds (Instruction length: [%d]", while_start, len(t.Instructions))
 	}
 
@@ -69,7 +65,7 @@ func (t *Tape) PopWhile() (bool, error) {
 }
 
 func (t *Tape) AdvanceToWhileEnd() (bool, error) {
-	if !t.InBounds(t.InstructionPointer + 1) {
+	if t.InstructionPointer == len(t.Instructions)-1 {
 		return false, fmt.Errorf("Failed to advance to OP_WHILE_END instruction. Tape end reached.")
 	}
 
@@ -86,7 +82,7 @@ func (t *Tape) AdvanceToWhileEnd() (bool, error) {
 func (t *Tape) FallbackToWhileStart() (bool, error) {
 	if len(t.WhileIndexStack) > 0 {
 		while_start := t.WhileIndexStack[len(t.WhileIndexStack)-1]
-		if !t.InBounds(while_start) {
+		if while_start < 0 || while_start > len(t.Instructions)-1 {
 			return false, fmt.Errorf("InstructionPointer [%d] from while stack is out of bounds (Instruction length: [%d]", while_start, len(t.Instructions))
 		}
 		t.WhileIndexStack = t.WhileIndexStack[:len(t.WhileIndexStack)-1]

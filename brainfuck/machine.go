@@ -75,6 +75,10 @@ func (m *Machine) Run() (bool, error) {
 			halt = true
 			exception = ErrMaxInstructionExecutionCountReached
 		}
+
+		if !m.Tape.Advance() {
+			halt = true
+		}
 	}
 
 	if exception != nil {

@@ -262,7 +262,7 @@ func TestMaxInstructionExecutionCountMachineLoadRunRead(t *testing.T) {
 	if ok, err := m.Run(); ok {
 		t.Errorf("Unexpected success calling Machine.Run(). %v \nINSTRUCTION COUNTER: %v \nMEMORY DUMP:\n%v\n", err, m.InstructionCount, m.Memory.Cells)
 	} else {
-		if err.Error() != "Instruction execution count limit reached: 10" {
+		if err != ErrMaxInstructionExecutionCountReached {
 			t.Errorf("Error string doesn't match: %v", err)
 		}
 	}

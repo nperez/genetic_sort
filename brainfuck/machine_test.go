@@ -6,7 +6,7 @@ import (
 )
 
 func TestBasicMachine(t *testing.T) {
-	m := NewMachine(&MachineConfig{MaxInstructionExecutionCount: 10000, MemoryConfig: &MemoryConfig{CellCount: 100, UpperBound: 255, LowerBound: 0}})
+	m := NewMachine(&MachineConfig{MaxInstructionExecutionCount: 10000, MemoryCellCount: 100})
 
 	if m == nil {
 		t.Errorf("NewMachine returned nil")
@@ -14,9 +14,9 @@ func TestBasicMachine(t *testing.T) {
 }
 
 func TestLoadMemory(t *testing.T) {
-	m := NewMachine(&MachineConfig{MaxInstructionExecutionCount: 10000, MemoryConfig: &MemoryConfig{CellCount: 1, UpperBound: 255, LowerBound: 0}})
+	m := NewMachine(&MachineConfig{MaxInstructionExecutionCount: 10000, MemoryCellCount: 1})
 
-	if ok, err := m.LoadMemory([]uint{1}); !ok {
+	if ok, err := m.LoadMemory([]uint8{1}); !ok {
 		t.Errorf("Unexpected failure calling Machine.LoadMemory. %v", err)
 	}
 
@@ -24,25 +24,17 @@ func TestLoadMemory(t *testing.T) {
 		t.Errorf("Failed to store value. Expected memory cell index [0] value [%d] isn't [1]", m.Memory.Cells[0])
 	}
 
-	if ok, err := m.LoadMemory([]uint{1, 2}); ok {
+	if ok, err := m.LoadMemory([]uint8{1, 2}); ok {
 		t.Errorf("Unexpected success calling Machine.LoadMemory. CellCount 1, input lenth is 2")
 	} else {
 		if err.Error() != "Failed to load memory. Input length [2] is greater than memory capacity [1]" {
 			t.Errorf("Error string doesn't match: %v", err)
 		}
 	}
-
-	if ok, err := m.LoadMemory([]uint{256}); ok {
-		t.Errorf("Unexpected success calling Machine.LoadMemory. Input value is 256, UpperBound is 255")
-	} else {
-		if err.Error() != "Failed to load memory. Input value [256] is out of bounds [0, 255]" {
-			t.Errorf("Error string doesn't match: %v", err)
-		}
-	}
 }
 
 func TestReadMemory(t *testing.T) {
-	m := NewMachine(&MachineConfig{MaxInstructionExecutionCount: 10000, MemoryConfig: &MemoryConfig{CellCount: 1, UpperBound: 255, LowerBound: 0}})
+	m := NewMachine(&MachineConfig{MaxInstructionExecutionCount: 10000, MemoryCellCount: 1})
 
 	m.Memory.Cells[0] = 1
 
@@ -68,12 +60,11 @@ func TestReadMemory(t *testing.T) {
 }
 
 func TestBasicMachineLoadRunRead(t *testing.T) {
-
-	m := NewMachine(&MachineConfig{MaxInstructionExecutionCount: 10000, MemoryConfig: &MemoryConfig{CellCount: 100, UpperBound: 255, LowerBound: 0}})
+	m := NewMachine(&MachineConfig{MaxInstructionExecutionCount: 10000, MemoryCellCount: 100})
 
 	m.LoadProgram(SET_TO_ZERO)
 
-	if ok, err := m.LoadMemory([]uint{1}); !ok {
+	if ok, err := m.LoadMemory([]uint8{1}); !ok {
 		t.Errorf("Unexpected failure calling Machine.LoadMemory(). %v", err)
 	}
 
@@ -95,11 +86,11 @@ func TestBasicMachineLoadRunRead(t *testing.T) {
 }
 
 func TestNestedLoopMachineLoadRunRead(t *testing.T) {
-	m := NewMachine(&MachineConfig{MaxInstructionExecutionCount: 10000, MemoryConfig: &MemoryConfig{CellCount: 100, UpperBound: 255, LowerBound: 0}})
+	m := NewMachine(&MachineConfig{MaxInstructionExecutionCount: 10000, MemoryCellCount: 100})
 
 	m.LoadProgram("[[[-]+-]+-]>+")
 
-	if ok, err := m.LoadMemory([]uint{1}); !ok {
+	if ok, err := m.LoadMemory([]uint8{1}); !ok {
 		t.Errorf("Unexpected failure calling Machine.LoadMemory(). %v", err)
 	}
 
@@ -114,18 +105,17 @@ func TestNestedLoopMachineLoadRunRead(t *testing.T) {
 			t.Errorf("Return values length [%d] is not 2", len(val))
 		}
 
-		if !reflect.DeepEqual(val, []uint{0, 1}) {
+		if !reflect.DeepEqual(val, []uint8{0, 1}) {
 			t.Errorf("Returned value [%v] is not equal to expected [%v]", val, []int{0, 1})
 		}
 	}
 }
 
 func TestSimpleLoopWithPointerMovesLoadRunRead(t *testing.T) {
-
-	m := NewMachine(&MachineConfig{MaxInstructionExecutionCount: 10000, MemoryConfig: &MemoryConfig{CellCount: 100, UpperBound: 255, LowerBound: 0}})
+	m := NewMachine(&MachineConfig{MaxInstructionExecutionCount: 10000, MemoryCellCount: 100})
 	m.LoadProgram("++++[>+>+>+>+<<<<-]")
 
-	if ok, err := m.LoadMemory([]uint{0}); !ok {
+	if ok, err := m.LoadMemory([]uint8{0}); !ok {
 		t.Errorf("Unexpected failure calling Machine.LoadMemory(). %v", err)
 	}
 
@@ -140,18 +130,17 @@ func TestSimpleLoopWithPointerMovesLoadRunRead(t *testing.T) {
 			t.Errorf("Return values length [%d] is not 5", len(val))
 		}
 
-		if !reflect.DeepEqual(val, []uint{0, 4, 4, 4, 4}) {
+		if !reflect.DeepEqual(val, []uint8{0, 4, 4, 4, 4}) {
 			t.Errorf("Returned value [%v] is not equal to expected [%v]", val, []uint{0, 4, 4, 4, 4})
 		}
 	}
 }
 
 func TestSimpleNestedLoopWithPointerMovesLoadRunRead(t *testing.T) {
-
-	m := NewMachine(&MachineConfig{MaxInstructionExecutionCount: 10000, MemoryConfig: &MemoryConfig{CellCount: 100, UpperBound: 255, LowerBound: 0}})
+	m := NewMachine(&MachineConfig{MaxInstructionExecutionCount: 10000, MemoryCellCount: 100})
 	m.LoadProgram("++[#>++++[#>+>+>+>+<<<<-#]<-#]")
 
-	if ok, err := m.LoadMemory([]uint{0}); !ok {
+	if ok, err := m.LoadMemory([]uint8{0}); !ok {
 		t.Errorf("Unexpected failure calling Machine.LoadMemory(). %v", err)
 	}
 
@@ -166,18 +155,17 @@ func TestSimpleNestedLoopWithPointerMovesLoadRunRead(t *testing.T) {
 			t.Errorf("Return values length [%d] is not 6", len(val))
 		}
 
-		if !reflect.DeepEqual(val, []uint{0, 0, 8, 8, 8, 8}) {
+		if !reflect.DeepEqual(val, []uint8{0, 0, 8, 8, 8, 8}) {
 			t.Errorf("Returned value [%v] is not equal to expected [%v]", val, []uint{0, 0, 8, 8, 8, 8})
 		}
 	}
 }
 
 func TestHelloWorldMachineLoadRunRead(t *testing.T) {
-
-	m := NewMachine(&MachineConfig{MaxInstructionExecutionCount: 10000, MemoryConfig: &MemoryConfig{CellCount: 100, UpperBound: 255, LowerBound: 0}})
+	m := NewMachine(&MachineConfig{MaxInstructionExecutionCount: 10000, MemoryCellCount: 100})
 	m.LoadProgram("++++++++[>++++[>++>+++>+++>+<<<<-]>+>+>->>+[<]<-]")
 
-	if ok, err := m.LoadMemory([]uint{0}); !ok {
+	if ok, err := m.LoadMemory([]uint8{0}); !ok {
 		t.Errorf("Unexpected failure calling Machine.LoadMemory(). %v", err)
 	}
 
@@ -192,18 +180,17 @@ func TestHelloWorldMachineLoadRunRead(t *testing.T) {
 			t.Errorf("Return values length [%d] is not 7", len(val))
 		}
 
-		if !reflect.DeepEqual(val, []uint{0, 0, 72, 104, 88, 32, 8}) {
+		if !reflect.DeepEqual(val, []uint8{0, 0, 72, 104, 88, 32, 8}) {
 			t.Errorf("Returned value [%v] is not equal to expected [%v]", val, []uint{0, 0, 72, 104, 88, 32, 8})
 		}
 	}
 }
 
 func TestBookmarkJumpsMachineLoadRunRead(t *testing.T) {
-
-	m := NewMachine(&MachineConfig{MaxInstructionExecutionCount: 10000, MemoryConfig: &MemoryConfig{CellCount: 100, UpperBound: 255, LowerBound: 0}})
+	m := NewMachine(&MachineConfig{MaxInstructionExecutionCount: 10000, MemoryCellCount: 100})
 	m.LoadProgram(SWAP_RIGHT)
 
-	if ok, err := m.LoadMemory([]uint{20, 40}); !ok {
+	if ok, err := m.LoadMemory([]uint8{20, 40}); !ok {
 		t.Errorf("Unexpected failure calling Machine.LoadMemory(). %v", err)
 	}
 
@@ -218,18 +205,17 @@ func TestBookmarkJumpsMachineLoadRunRead(t *testing.T) {
 			t.Errorf("Return values length [%d] is not 3", len(val))
 		}
 
-		if !reflect.DeepEqual(val, []uint{40, 20, 0}) {
+		if !reflect.DeepEqual(val, []uint8{40, 20, 0}) {
 			t.Errorf("Returned value [%v] is not equal to expected [%v]", val, []uint{40, 20, 0})
 		}
 	}
 }
 
 func TestBookmarkJumps2MachineLoadRunRead(t *testing.T) {
-
-	m := NewMachine(&MachineConfig{MaxInstructionExecutionCount: 10000, MemoryConfig: &MemoryConfig{CellCount: 100, UpperBound: 255, LowerBound: 0}})
+	m := NewMachine(&MachineConfig{MaxInstructionExecutionCount: 10000, MemoryCellCount: 100})
 	m.LoadProgram(SWAP_LEFT)
 
-	if ok, err := m.LoadMemory([]uint{10, 20, 30}); !ok {
+	if ok, err := m.LoadMemory([]uint8{10, 20, 30}); !ok {
 		t.Errorf("Unexpected failure calling Machine.LoadMemory(). %v", err)
 	}
 
@@ -244,18 +230,17 @@ func TestBookmarkJumps2MachineLoadRunRead(t *testing.T) {
 			t.Errorf("Return values length [%d] is not 3", len(val))
 		}
 
-		if !reflect.DeepEqual(val, []uint{20, 10, 30}) {
+		if !reflect.DeepEqual(val, []uint8{20, 10, 30}) {
 			t.Errorf("Returned value [%v] is not equal to expected [%v]", val, []uint{20, 10, 30})
 		}
 	}
 }
 
 func TestMaxInstructionExecutionCountMachineLoadRunRead(t *testing.T) {
-
-	m := NewMachine(&MachineConfig{MaxInstructionExecutionCount: 10, MemoryConfig: &MemoryConfig{CellCount: 100, UpperBound: 255, LowerBound: 0}})
+	m := NewMachine(&MachineConfig{MaxInstructionExecutionCount: 251, MemoryCellCount: 100})
 	m.LoadProgram(SWAP_LEFT)
 
-	if ok, err := m.LoadMemory([]uint{10, 20, 30}); !ok {
+	if ok, err := m.LoadMemory([]uint8{10, 20, 30}); !ok {
 		t.Errorf("Unexpected failure calling Machine.LoadMemory(). %v", err)
 	}
 

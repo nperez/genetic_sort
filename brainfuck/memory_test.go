@@ -5,14 +5,14 @@ import (
 )
 
 func TestNewMemoryFromConfig(t *testing.T) {
-	memory := NewMemoryFromConfig(&MemoryConfig{CellCount: 100, LowerBound: 0, UpperBound: 255})
+	memory := NewMemory(100)
 	if memory == nil {
 		t.Errorf("NewMemoryFromConfig returned nil")
 	}
 }
 
 func TestMemoryReset(t *testing.T) {
-	memory := NewMemoryFromConfig(&MemoryConfig{CellCount: 100, LowerBound: 0, UpperBound: 255})
+	memory := NewMemory(100)
 	memory.Cells[0] = 1
 	memory.MemoryPointer = 20
 	memory.BookmarkRegister = 21
@@ -34,7 +34,7 @@ func TestMemoryReset(t *testing.T) {
 }
 
 func TestIncrement(t *testing.T) {
-	memory := NewMemoryFromConfig(&MemoryConfig{CellCount: 100, LowerBound: 0, UpperBound: 255})
+	memory := NewMemory(100)
 	if ok, err := memory.Increment(); !ok {
 		t.Errorf("Increment failed: %v", err)
 	}
@@ -43,15 +43,15 @@ func TestIncrement(t *testing.T) {
 		t.Errorf("Increment failed. Value is [%d]. Expected value to be [1]. %v", val, err)
 	}
 
-	memory.MemoryConfig.UpperBound = 1
-
-	if ok, err := memory.Increment(); ok {
-		t.Errorf("Increment succeeded when it shouldn't. UpperBound [%d] has been violated with value [%d]. %v", memory.MemoryConfig.UpperBound, memory.Cells[memory.MemoryPointer], err)
+	memory.Cells[0] = 255
+	if ok, _ := memory.Increment(); ok {
+		t.Errorf("Increment succeeded when it shouldn't.")
+	} else {
 	}
 }
 
 func TestDecrement(t *testing.T) {
-	memory := NewMemoryFromConfig(&MemoryConfig{CellCount: 100, LowerBound: 0, UpperBound: 255})
+	memory := NewMemory(100)
 	memory.Cells[0] = 2
 	if ok, err := memory.Decrement(); !ok {
 		t.Errorf("Increment failed: %v", err)
@@ -61,15 +61,15 @@ func TestDecrement(t *testing.T) {
 		t.Errorf("Increment failed. Value is [%d]. Expected value to be [1]. %v", val, err)
 	}
 
-	memory.MemoryConfig.LowerBound = 1
-
-	if ok, err := memory.Decrement(); ok {
-		t.Errorf("Decrement succeeded when it shouldn't. LowerBound [%d] has been violated with value [%d]. %v", memory.MemoryConfig.LowerBound, memory.Cells[memory.MemoryPointer], err)
+	memory.Cells[0] = 0
+	if ok, _ := memory.Decrement(); ok {
+		t.Errorf("Decrement succeeded when it shouldn't.")
+	} else {
 	}
 }
 
 func TestMovePointerRight(t *testing.T) {
-	memory := NewMemoryFromConfig(&MemoryConfig{CellCount: 100, LowerBound: 0, UpperBound: 255})
+	memory := NewMemory(100)
 	if ok, err := memory.MovePointerRight(); !ok {
 		t.Errorf("Moving memory pointer to the right failed. %v", err)
 	}
@@ -81,12 +81,12 @@ func TestMovePointerRight(t *testing.T) {
 	memory.MemoryPointer = 99
 
 	if ok, _ := memory.MovePointerRight(); ok {
-		t.Errorf("Moving memory pointer to the right successed unexpectedly. Expected MemoryPointer to be out of bounds but is [%d]", memory.MemoryPointer)
+		t.Errorf("Moving memory pointer to the right successed unexpectedly. Expected MemoryPointer to be out of bounds but is [%d] and CellCount is [%d]", memory.MemoryPointer, memory.CellCount)
 	}
 }
 
 func TestMovePointerLeft(t *testing.T) {
-	memory := NewMemoryFromConfig(&MemoryConfig{CellCount: 100, LowerBound: 0, UpperBound: 255})
+	memory := NewMemory(100)
 	memory.MemoryPointer = 99
 	if ok, err := memory.MovePointerLeft(); !ok {
 		t.Errorf("Moving memory pointer to the left failed. %v", err)
@@ -103,7 +103,7 @@ func TestMovePointerLeft(t *testing.T) {
 }
 
 func TestBookmarks(t *testing.T) {
-	memory := NewMemoryFromConfig(&MemoryConfig{CellCount: 100, LowerBound: 0, UpperBound: 255})
+	memory := NewMemory(100)
 
 	memory.MemoryPointer = 10
 	if ok, err := memory.StoreBookmark(); !ok {

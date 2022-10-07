@@ -5,7 +5,7 @@ import (
 )
 
 func MakeTapeAndMemory(op ...rune) (*Tape, *Memory) {
-	return NewTape(string(op)), NewMemoryFromConfig(&MemoryConfig{CellCount: 10, UpperBound: 255, LowerBound: 0})
+	return NewTape(string(op)), NewMemory(10)
 }
 
 func Test_OP_INC(t *testing.T) {
@@ -28,12 +28,12 @@ func Test_OP_INC(t *testing.T) {
 		t.Errorf("Instruction pointer [%d] is not at expected value [0]", tape.InstructionPointer)
 	}
 
-	mem.MemoryConfig.UpperBound = 1
+	mem.Cells[0] = 255
 
 	if ok, err := tape.Execute(mem); ok {
 		t.Errorf("Unexpected success when calling OP_INC.Execute().")
 	} else {
-		if err.Error() != "OP_INC at tape index [0] failed to increment memory cell index [0]. Increment failed. Cell value [1] at UpperBound [1]" {
+		if err.Error() != "OP_INC at tape index [0] failed to increment memory cell index [0]. Increment failed. Cell value [255] at UpperBound [255]" {
 			t.Errorf("Error string doesn't match: %v", err)
 		}
 	}
@@ -61,6 +61,7 @@ func Test_OP_DEC(t *testing.T) {
 		t.Errorf("Instruction pointer [%d] is not at expected value [0]", tape.InstructionPointer)
 	}
 
+	tape.InstructionPointer = 0
 	mem.Cells[0] = 0
 
 	if ok, err := tape.Execute(mem); ok {
@@ -95,6 +96,7 @@ func Test_OP_POINTER_LEFT(t *testing.T) {
 	}
 
 	mem.MemoryPointer = 0
+	tape.InstructionPointer = 0
 
 	if ok, err := tape.Execute(mem); ok {
 		t.Errorf("Unexpected success when calling OP_POINTER_LEFT.Execute().")
@@ -126,6 +128,7 @@ func Test_OP_POINTER_RIGHT(t *testing.T) {
 	}
 
 	mem.MemoryPointer = 9
+	tape.InstructionPointer = 0
 
 	if ok, err := tape.Execute(mem); ok {
 		t.Errorf("Unexpected success when calling OP_POINTER_RIGHT.Execute().")
@@ -318,7 +321,7 @@ func Test_OP_BOOKMARK(t *testing.T) {
 }
 
 func Test_NO_OP(t *testing.T) {
-	tape, mem := NewTape("##"), NewMemoryFromConfig(&MemoryConfig{CellCount: 1, LowerBound: 0, UpperBound: 0})
+	tape, mem := NewTape("##"), NewMemory(1)
 
 	if ok, err := tape.Execute(mem); !ok {
 		t.Errorf("Unexpected failure when calling NO_OP.Execute(). %v", err)
@@ -352,8 +355,8 @@ func Test_NO_OP(t *testing.T) {
 		t.Errorf("Expected memory cell count to be [1], but was [%d]", len(mem.Cells))
 	}
 
-	if mem.MemoryConfig.CellCount != 1 || mem.MemoryConfig.LowerBound != 0 || mem.MemoryConfig.UpperBound != 0 {
-		t.Errorf("Expected memory config to be %v, but was %v", &MemoryConfig{CellCount: 1}, mem.MemoryConfig)
+	if mem.CellCount != 1 {
+		t.Errorf("Expected memory cell count to be %v, but was %v", 1, mem.CellCount)
 	}
 
 }

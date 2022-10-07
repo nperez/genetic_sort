@@ -15,12 +15,12 @@ type Machine struct {
 
 type MachineConfig struct {
 	MaxInstructionExecutionCount uint
-	MemoryConfig                 *MemoryConfig
+	MemoryCellCount              uint
 }
 
 func NewMachine(mc *MachineConfig) *Machine {
 	return &Machine{
-		Memory: NewMemoryFromConfig(mc.MemoryConfig),
+		Memory: NewMemory(mc.MemoryCellCount),
 		Config: mc,
 	}
 }
@@ -39,26 +39,22 @@ func (m *Machine) LoadProgram(instructions string) {
 	}
 }
 
-func (m *Machine) LoadMemory(input []uint) (bool, error) {
+func (m *Machine) LoadMemory(input []uint8) (bool, error) {
 
-	if len(input) > len(m.Memory.Cells) {
+	if uint(len(input)) > m.Config.MemoryCellCount {
 		return false, fmt.Errorf("Failed to load memory. Input length [%d] is greater than memory capacity [%d]", len(input), len(m.Memory.Cells))
 	}
 
 	for i, val := range input {
-		if !m.Memory.CellInBounds(val) {
-			return false, fmt.Errorf("Failed to load memory. Input value [%d] is out of bounds [%d, %d]", val, m.Memory.MemoryConfig.LowerBound, m.Memory.MemoryConfig.UpperBound)
-		}
-
 		m.Memory.Cells[i] = val
 	}
 	return true, nil
 }
 
-func (m *Machine) ReadMemory(count uint) (bool, []uint, error) {
+func (m *Machine) ReadMemory(count uint) (bool, []uint8, error) {
 
 	if count > uint(len(m.Memory.Cells)) {
-		return false, []uint{}, fmt.Errorf("Failed to read memory. Read count [%d] is greater than memory capacity [%d]", count, len(m.Memory.Cells))
+		return false, []uint8{}, fmt.Errorf("Failed to read memory. Read count [%d] is greater than memory capacity [%d]", count, len(m.Memory.Cells))
 	}
 
 	return true, m.Memory.Cells[0:count], nil

@@ -5,10 +5,6 @@ import (
 	"math"
 )
 
-type MemoryConfig struct {
-	CellCount uint
-}
-
 type Memory struct {
 	Cells            []uint8
 	CellCount        uint

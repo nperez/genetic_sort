@@ -26,8 +26,8 @@ type Evaluation struct {
 	InstructionCount     uint
 	InstructionsExecuted uint
 	MachineError         *string
-	Input                []byte `gorm:"type:blob"`
-	Output               []byte `gorm:"type:blob"`
+	Input                []uint8 `gorm:"type:blob"`
+	Output               []uint8 `gorm:"type:blob"`
 }
 
 type EvaluatorConfig struct {
@@ -74,11 +74,11 @@ func (e *Evaluator) Evaluate(u *Unit) *Evaluation {
 		panic(fmt.Errorf("Failed to read memory. Check MachineConfig.MemoryConfig.CellCount and EvaluatorConfig.OutputCellCount. %v", err))
 	}
 
-	copyOutput := make([]uint, len(output))
+	copyOutput := make([]uint8, len(output))
 	copy(copyOutput, output)
 
-	inMap := make(map[uint]bool)
-	outMap := make(map[uint]bool)
+	inMap := make(map[uint8]bool)
+	outMap := make(map[uint8]bool)
 
 	for g := 0; g < len(input); g++ {
 		inMap[input[g]] = true
@@ -102,35 +102,27 @@ func (e *Evaluator) Evaluate(u *Unit) *Evaluation {
 	}
 
 	eval.Sortedness = byte(-(int((float32(inversions)/float32(maxInversions))*100) - 100))
-	eval.Input = makeTruncated(input)
-	eval.Output = makeTruncated(output)
+	eval.Input = input
+	eval.Output = output
 	eval.InstructionsExecuted = e.Machine.InstructionCount
 	eval.InstructionCount = uint(len(u.Instructions.ToProgram()))
 
 	return eval
 }
 
-func makeRandomInput(count, upperbound uint) []uint {
-	ret := make([]uint, count)
+func makeRandomInput(count, upperbound uint) []uint8 {
+	ret := make([]uint8, count)
 	for i := uint(0); i < count; i++ {
-		ret[i] = uint(rand.Intn(int(upperbound)))
+		ret[i] = uint8(rand.Intn(int(upperbound)))
 	}
 	return ret
 }
 
-func makeTruncated(stuff []uint) []byte {
-	ret := make([]byte, len(stuff))
-	for i := 0; i < len(stuff); i++ {
-		ret[i] = byte(stuff[i])
-	}
-	return ret
-}
-
-func merge(a []uint, inversion0 uint) uint {
+func merge(a []uint8, inversion0 uint) uint {
 
 	inversion1 := uint(0)
 
-	c := make([]uint, len(a))
+	c := make([]uint8, len(a))
 	copy(c, a)
 
 	copyLeft := uint(0)
@@ -158,7 +150,7 @@ func merge(a []uint, inversion0 uint) uint {
 	return inversion0 + inversion1
 }
 
-func merge_sort(a []uint) uint {
+func merge_sort(a []uint8) uint {
 	inversions := uint(0)
 	if len(a) > 1 {
 		mid := len(a) / 2

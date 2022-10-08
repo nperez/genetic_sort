@@ -13,11 +13,7 @@ func makeEvaluatorAndUnit() (*Evaluator, *Unit) {
 		&EvaluatorConfig{
 			MachineConfig: &bf.MachineConfig{
 				MaxInstructionExecutionCount: 10000,
-				MemoryConfig: &bf.MemoryConfig{
-					CellCount:  20,
-					LowerBound: 0,
-					UpperBound: 255,
-				},
+				MemoryCellCount:              20,
 			},
 			InputCellCount:      5,
 			InputCellUpperBound: 255,
@@ -80,7 +76,7 @@ func TestEvaluate(t *test.T) {
 		t.Errorf("Unexpected Sortedness: [%v], expected: 38", result.Sortedness)
 	}
 
-	if result.InstructionsExecuted != 156 {
+	if result.InstructionsExecuted != 157 {
 		t.Errorf("Unexpected InstructionsExecuted: [%v], expected: 156", result.InstructionsExecuted)
 	}
 
@@ -89,7 +85,7 @@ func TestEvaluate(t *test.T) {
 }
 
 func TestSortedness(t *test.T) {
-	unsorted := []uint{5, 4, 3, 2, 1}
+	unsorted := []uint8{5, 4, 3, 2, 1}
 
 	inversions := merge_sort(unsorted)
 
@@ -97,7 +93,7 @@ func TestSortedness(t *test.T) {
 		t.Errorf("merge_sort implementation returns unexpected number of inversions on reversed list. Expected 10, got: %v", inversions)
 	}
 
-	unsorted = []uint{1, 2, 3, 5, 4}
+	unsorted = []uint8{1, 2, 3, 5, 4}
 
 	inversions = merge_sort(unsorted)
 

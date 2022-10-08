@@ -1,0 +1,8 @@
+TODO
+
+Persistence for population configs
+Persistence for selector configs
+Allow random seed persistence and use
+Make first initial incubator loop (Create, Persist, [ Iterate, Execute, Evaluate, Select, Update ])
+Skeleton out first cmd to run the incubator loop
+Duct tape together sqlite3 + SQL + gnuplot

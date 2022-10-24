@@ -2,10 +2,11 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"os"
 
-	gs "nickandperla.net/genetic_sort"
+	"nickandperla.net/genetic_sort"
 
 	"github.com/BurntSushi/toml"
 )
@@ -35,7 +36,7 @@ func main() {
 	}
 
 	confDecoder := toml.NewDecoder(conffile)
-	var toolConfig gs.ToolConfig
+	var toolConfig genetic_sort.ToolConfig
 	if _, err = confDecoder.Decode(&toolConfig); err != nil {
 		log.Fatalf("Failed to unmarshal tool config: %v", err)
 	}
@@ -48,7 +49,7 @@ func main() {
 	}
 
 	popDecoder := toml.NewDecoder(popfile)
-	var popConfig gs.PopulationConfig
+	var popConfig genetic_sort.PopulationConfig
 
 	if _, err = popDecoder.Decode(&popConfig); err != nil {
 		log.Fatalf("Failed to unmarshal population config: %v", err)
@@ -56,5 +57,14 @@ func main() {
 
 	popfile.Close()
 
-	log.Printf("ToolConfig: %+v\nPopConfig: %+v\n", toolConfig, popConfig)
+	if persist, err := genetic_sort.NewPersistence(toolConfig.Persistence); err != nil {
+		log.Fatalf("Failed to create or initialize Persistence: %v", err)
+	} else {
+		pop1 := genetic_sort.NewPopulationFromConfig(&popConfig)
+		if id, err := persist.Create(pop1); err != nil {
+			log.Fatalf("Failed to create population: %v", err)
+		} else {
+			fmt.Printf("%d\n", id)
+		}
+	}
 }

@@ -24,6 +24,5 @@ require (
 )
 
 replace nickandperla.net/brainfuck => ./brainfuck
-replace nickandperla.net/genetic_sort => ./genetic_sort
 
 go 1.18

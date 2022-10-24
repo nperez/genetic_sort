@@ -1,0 +1,11 @@
+# Tool Config
+[persistence]
+name = "genetic_sort.db"
+path = './'
+pragmas = [
+    "journal_mode=WAL",
+    "journal_size=4000000"
+]
+options = [
+    "cache=shared"
+]

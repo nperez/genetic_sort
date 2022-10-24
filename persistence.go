@@ -2,10 +2,12 @@ package genetic_sort
 
 import (
 	"fmt"
-	sqlite "github.com/glebarez/sqlite"
-	gorm "gorm.io/gorm"
+	"log"
 	"path/filepath"
 	"strings"
+
+	sqlite "github.com/glebarez/sqlite"
+	gorm "gorm.io/gorm"
 )
 
 type PersistenceConfig struct {
@@ -71,6 +73,8 @@ func NewPersistence(config *PersistenceConfig) (*Persistence, error) {
 		return nil, err
 	}
 
+	db = db.Session(&gorm.Session{PrepareStmt: true, CreateBatchSize: 1000})
+
 	p := &Persistence{Config: config, DB: db}
 	if err = p.initialize(); err != nil {
 		return nil, err
@@ -81,17 +85,35 @@ func NewPersistence(config *PersistenceConfig) (*Persistence, error) {
 
 func (p *Persistence) initialize() error {
 	if err := p.DB.AutoMigrate(
-		&PopulationConfig{},
 		&Population{},
 		&Unit{},
 		&Instruction{},
 		&Mutation{},
 		&Evaluation{},
-		&EvaluatorConfig{},
-		&SelectorConfig{},
 	); err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func (p *Persistence) Shutdown() {
+	if sqldb, err := p.DB.DB(); err != nil {
+		log.Fatalf("Failed to retrieve raw DB: %v", err)
+	} else {
+		sqldb.Close()
+	}
+}
+
+func (p *Persistence) Create(pop *Population) (uint, error) {
+	if pop == nil {
+		return 0, fmt.Errorf("Population cannot be nil")
+	}
+
+	if result := p.DB.Create(pop); result.Error != nil {
+		return 0, fmt.Errorf("Failed to call gorm.Create(): %w", result.Error)
+	}
+
+	return pop.ID, nil
+
 }

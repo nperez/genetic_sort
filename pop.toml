@@ -1,0 +1,22 @@
+# Population Config
+unit_count = 100
+[unit]
+lifespan = 100
+mutation_chance = 0.25
+instruction_count = 10
+[unit.instruction]
+op_set_count = 10
+
+[eval]
+input_cell_count = 10
+output_cell_count = 10
+[eval.machine]
+max_instruction_execution_count = 10000
+memory_cell_count = 20
+
+[select]
+machine_run = true
+set_fidelity = 50
+sortedness = 50
+instruction_count = 100
+instructions_executed = 10000

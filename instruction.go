@@ -79,7 +79,7 @@ func (i *Instruction) ToProgram() []byte {
 }
 
 const (
-	DEBUG = true
+	DEBUG = false
 )
 
 func makeOpsBig(stuff string) []byte {

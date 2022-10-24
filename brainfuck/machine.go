@@ -14,8 +14,8 @@ type Machine struct {
 }
 
 type MachineConfig struct {
-	MaxInstructionExecutionCount uint
-	MemoryCellCount              uint
+	MaxInstructionExecutionCount uint `toml:"max_instruction_execution_count"`
+	MemoryCellCount              uint `toml:"memory_cell_count"`
 }
 
 func NewMachine(mc *MachineConfig) *Machine {

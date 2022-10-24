@@ -1,19 +1,18 @@
 package genetic_sort
 
-import (
-//"math/rand"
-)
+// "math/rand"
 
 type Population struct {
-	ID             uint
-	Units          []*Unit
-	MutationChance float32
+	ID               uint
+	Units            []*Unit
+	PopulationConfig *PopulationConfig `gorm:"embedded"`
 }
 
 type PopulationConfig struct {
-	UnitCount      uint
-	UnitConfig     *UnitConfig
-	MutationChance float32
+	UnitCount       uint             `toml:"unit_count"`
+	UnitConfig      *UnitConfig      `gorm:"embedded" toml:"unit"`
+	EvaluatorConfig *EvaluatorConfig `gorm:"embedded" toml:"eval"`
+	SelectorConfig  *SelectorConfig  `gorm:"embedded" toml:"select"`
 }
 
 func NewPopulationFromConfig(config *PopulationConfig) *Population {
@@ -24,8 +23,8 @@ func NewPopulationFromConfig(config *PopulationConfig) *Population {
 	}
 
 	return &Population{
-		Units:          units,
-		MutationChance: config.MutationChance,
+		Units:            units,
+		PopulationConfig: config,
 	}
 }
 

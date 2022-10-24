@@ -6,7 +6,7 @@ import (
 
 func makeSelectorConfig() *SelectorConfig {
 	return &SelectorConfig{
-		MachineRun:           1,
+		MachineRun:           true,
 		SetFidelity:          100,
 		Sortedness:           100,
 		InstructionCount:     200,
@@ -16,7 +16,7 @@ func makeSelectorConfig() *SelectorConfig {
 
 func makeEvaluation() *Evaluation {
 	return &Evaluation{
-		MachineRun:           1,
+		MachineRun:           true,
 		SetFidelity:          100,
 		Sortedness:           100,
 		InstructionCount:     200,
@@ -43,7 +43,7 @@ func TestSimpleSelect(t *test.T) {
 func TestSelectFailures(t *test.T) {
 	s := NewSelector(makeSelectorConfig())
 	ev := makeEvaluation()
-	ev.MachineRun = 0
+	ev.MachineRun = false
 
 	if result, err := s.Select(&Unit{}, ev); result != false || err != FailedMachineRun {
 		t.Errorf("Selector.Select() unexpectedly succeeded at FailedMachineRun")

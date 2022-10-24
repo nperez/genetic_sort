@@ -3,6 +3,7 @@ package genetic_sort
 import (
 	"fmt"
 	"log"
+	"math"
 	"math/rand"
 
 	bf "nickandperla.net/brainfuck"
@@ -20,7 +21,7 @@ import (
 type Evaluation struct {
 	ID                   uint
 	UnitID               uint
-	MachineRun           byte
+	MachineRun           bool
 	SetFidelity          byte
 	Sortedness           byte
 	InstructionCount     uint
@@ -31,10 +32,9 @@ type Evaluation struct {
 }
 
 type EvaluatorConfig struct {
-	MachineConfig       *bf.MachineConfig
-	InputCellCount      uint
-	InputCellUpperBound uint
-	OutputCellCount     uint
+	MachineConfig   *bf.MachineConfig `gorm:"embedded" toml:"machine"`
+	InputCellCount  uint              `toml:"input_cell_count"`
+	OutputCellCount uint              `toml:"output_cell_count"`
 }
 
 type Evaluator struct {
@@ -53,10 +53,10 @@ func (e *Evaluator) Evaluate(u *Unit) *Evaluation {
 
 	eval := &Evaluation{}
 
-	input := makeRandomInput(e.Config.InputCellCount, e.Config.InputCellUpperBound)
+	input := makeRandomInput(e.Config.InputCellCount)
 	e.Machine.LoadProgram(u.Instructions.ToProgram())
 	if ok, err := e.Machine.LoadMemory(input); !ok {
-		panic(fmt.Errorf("Failed to load memory into machine. Check MachineConfig.MemoryConfig.UpperBound and EvaluatorConfig.InputCellUpperBound. %v", err))
+		panic(fmt.Errorf("Failed to load memory into machine. %v", err))
 	}
 
 	if ok, err := e.Machine.Run(); !ok {
@@ -65,7 +65,7 @@ func (e *Evaluator) Evaluate(u *Unit) *Evaluation {
 			eval.MachineError = &msg
 		}
 	} else {
-		eval.MachineRun = 1
+		eval.MachineRun = true
 	}
 
 	ok, output, err := e.Machine.ReadMemory(e.Config.OutputCellCount)
@@ -110,10 +110,10 @@ func (e *Evaluator) Evaluate(u *Unit) *Evaluation {
 	return eval
 }
 
-func makeRandomInput(count, upperbound uint) []uint8 {
+func makeRandomInput(count uint) []uint8 {
 	ret := make([]uint8, count)
 	for i := uint(0); i < count; i++ {
-		ret[i] = uint8(rand.Intn(int(upperbound)))
+		ret[i] = uint8(rand.Intn(int(math.MaxUint8)))
 	}
 	return ret
 }

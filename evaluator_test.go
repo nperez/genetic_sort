@@ -15,9 +15,8 @@ func makeEvaluatorAndUnit() (*Evaluator, *Unit) {
 				MaxInstructionExecutionCount: 10000,
 				MemoryCellCount:              20,
 			},
-			InputCellCount:      5,
-			InputCellUpperBound: 255,
-			OutputCellCount:     10,
+			InputCellCount:  5,
+			OutputCellCount: 10,
 		},
 	)
 
@@ -60,7 +59,7 @@ func TestEvaluate(t *test.T) {
 			result.UnitID, unit.ID)
 	}
 
-	if result.MachineRun != 1 {
+	if !result.MachineRun {
 		t.Errorf("Unexpected MachineRun value [%v], expected 1", result.MachineRun)
 	}
 

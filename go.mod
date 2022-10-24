@@ -1,4 +1,4 @@
-module genetic_sort
+module nickandperla.net/genetic_sort
 
 require (
 	github.com/glebarez/sqlite v1.4.3
@@ -8,6 +8,7 @@ require (
 )
 
 require (
+	github.com/BurntSushi/toml v1.2.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/glebarez/go-sqlite v1.17.0 // indirect
 	github.com/google/uuid v1.3.0 // indirect
@@ -23,5 +24,6 @@ require (
 )
 
 replace nickandperla.net/brainfuck => ./brainfuck
+replace nickandperla.net/genetic_sort => ./genetic_sort
 
 go 1.18

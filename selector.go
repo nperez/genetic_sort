@@ -9,11 +9,11 @@ type Selector struct {
 }
 
 type SelectorConfig struct {
-	MachineRun           byte
-	SetFidelity          byte
-	Sortedness           byte
-	InstructionCount     uint
-	InstructionsExecuted uint
+	MachineRun           bool `toml:"machine_run"`
+	SetFidelity          byte `toml:"set_fidelity"`
+	Sortedness           byte `toml:"sortedness"`
+	InstructionCount     uint `toml:"instruction_count"`
+	InstructionsExecuted uint `toml:"instructions_executed"`
 }
 
 func NewSelector(config *SelectorConfig) *Selector {

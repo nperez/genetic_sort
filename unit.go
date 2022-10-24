@@ -8,10 +8,10 @@ import (
 )
 
 type UnitConfig struct {
-	MutationChance    float32
-	InstructionCount  uint
-	InstructionConfig *InstructionConfig
-	Lifespan          uint
+	MutationChance    float32            `toml:"mutation_chance"`
+	InstructionCount  uint               `toml:"instruction_count"`
+	InstructionConfig *InstructionConfig `gorm:"embedded" toml:"instruction"`
+	Lifespan          uint               `toml:"lifespan"`
 }
 
 type Unit struct {

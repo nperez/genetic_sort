@@ -11,11 +11,12 @@ import (
 	cp "github.com/jinzhu/copier"
 	//gorm "gorm.io/gorm"
 	"log"
+
 	bf "nickandperla.net/brainfuck"
 )
 
 type InstructionConfig struct {
-	OpSetCount int
+	OpSetCount int `toml:"op_set_count"`
 }
 
 type Instruction struct {

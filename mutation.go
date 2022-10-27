@@ -3,25 +3,11 @@ package genetic_sort
 import (
 	"fmt"
 	"math/rand"
+
 	bf "nickandperla.net/brainfuck"
-	str "strings"
 )
 
-type META_OP byte
-
-const (
-	PUSH_OP META_OP = iota
-	POP_OP
-	SHIFT_OP
-	UNSHIFT_OP
-	INSERT_OP
-	DELETE_OP
-	SWAP_OP
-	REPLACE_OP
-	META_NO_OP
-)
-
-var META_OP_SET = []META_OP{
+var META_OP_SET = []byte{
 	PUSH_OP,
 	POP_OP,
 	SHIFT_OP,
@@ -38,7 +24,7 @@ type Mutation struct {
 	InstructionID uint
 	Position1     *uint
 	Position2     *uint
-	MetaOP        META_OP
+	MetaOP        byte
 	Op            byte
 	Chance        float32
 }
@@ -62,40 +48,32 @@ func (m *Mutation) Apply(i *Instruction) {
 
 	switch m.MetaOP {
 	case PUSH_OP:
-		i.Ops = string(append([]byte(i.Ops), m.Op))
+		i.Ops = append(i.Ops, m.Op)
 	case POP_OP:
 		i.Ops = i.Ops[:len(i.Ops)-1]
 	case SHIFT_OP:
 		i.Ops = i.Ops[1:]
 	case UNSHIFT_OP:
-		i.Ops = string(append([]byte{m.Op}, []byte(i.Ops)...))
+		i.Ops = append([]byte{m.Op}, i.Ops...)
 	case INSERT_OP:
 		index := pos1
 		first := i.Ops[:index]
 		second := i.Ops[index:]
-		i.Ops = str.Join([]string{first, string(m.Op), second}, "")
+		temp := append(first, m.Op)
+		i.Ops = append(temp, second...)
 		m.Position1 = &pos1
 	case DELETE_OP:
 		index := pos1
 		first := i.Ops[:index]
 		second := i.Ops[index+1:]
-		i.Ops = str.Join([]string{first, second}, "")
+		i.Ops = append(first, second...)
 		m.Position1 = &pos1
 	case SWAP_OP:
-		i1 := pos1
-		i2 := pos2
-		bslice := []byte(i.Ops)
-		first := i.Ops[i1]
-		second := i.Ops[i2]
-		bslice[i1] = second
-		bslice[i2] = first
-		i.Ops = string(bslice)
+		i.Ops[pos1], i.Ops[pos2] = i.Ops[pos2], i.Ops[pos1]
 		m.Position1 = &pos1
 		m.Position2 = &pos2
 	case REPLACE_OP:
-		bslice := []byte(i.Ops)
-		bslice[pos1] = m.Op
-		i.Ops = string(bslice)
+		i.Ops[pos1] = m.Op
 		m.Position1 = &pos1
 	}
 

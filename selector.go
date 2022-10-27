@@ -1,9 +1,5 @@
 package genetic_sort
 
-import (
-	"fmt"
-)
-
 type Selector struct {
 	Config *SelectorConfig
 }
@@ -20,29 +16,25 @@ func NewSelector(config *SelectorConfig) *Selector {
 	return &Selector{Config: config}
 }
 
-var FailedMachineRun error = fmt.Errorf("FailedMachineRun")
-var FailedSetFidelity error = fmt.Errorf("FailedSetFidelity")
-var FailedSortedness error = fmt.Errorf("FailedSortedness")
-var FailedInstructionCount error = fmt.Errorf("FailedInstructionCount")
-var FailedInstructionsExecuted error = fmt.Errorf("FailedInstructionsExecuted")
+type SelectFailReason uint
 
-func (s *Selector) Select(u *Unit, e *Evaluation) (bool, error) {
+func (s *Selector) Select(u *Unit, e *Evaluation) SelectFailReason {
 
 	if e.MachineRun != s.Config.MachineRun {
-		return false, FailedMachineRun
+		return FailedMachineRun
 	}
 	if e.SetFidelity < s.Config.SetFidelity {
-		return false, FailedSetFidelity
+		return FailedSetFidelity
 	}
 	if e.Sortedness < s.Config.Sortedness {
-		return false, FailedSortedness
+		return FailedSortedness
 	}
 	if e.InstructionCount > s.Config.InstructionCount {
-		return false, FailedInstructionCount
+		return FailedInstructionCount
 	}
 	if e.InstructionsExecuted > s.Config.InstructionsExecuted {
-		return false, FailedInstructionsExecuted
+		return FailedInstructionsExecuted
 	}
-	return true, nil
+	return 0
 
 }

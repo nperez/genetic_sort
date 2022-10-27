@@ -1,6 +1,7 @@
 package genetic_sort
 
 import (
+	"log"
 	"math/rand"
 
 	// "github.com/xrash/smetrics"
@@ -19,12 +20,13 @@ type Unit struct {
 	PopulationID   uint
 	Parent         *Unit
 	ParentID       *uint
-	Instructions   Instructions
+	Instructions   []*Instruction
 	Age            uint
 	Lifespan       uint
 	MutationChance float32
-	Alive          bool
+	Alive          uint `gorm:"default:1"`
 	Evaluations    []*Evaluation
+	Tombstone      *Tombstone
 }
 
 func NewUnitFromConfig(config *UnitConfig) *Unit {
@@ -49,7 +51,7 @@ func NewUnitFromRandom(
 	return &Unit{
 		Instructions:   ins,
 		MutationChance: mutationChance,
-		Alive:          true,
+		Alive:          Alive,
 		Lifespan:       lifeSpan,
 	}
 }
@@ -66,6 +68,18 @@ func (u *Unit) Clone() *Unit {
 	clone := &Unit{}
 	cp.Copy(clone, u)
 	return clone
+}
+
+func (u *Unit) Die(reason SelectFailReason) *Tombstone {
+	if reason == 0 {
+		log.Fatalf("Unit needs a death reason")
+	}
+	if DEBUG {
+		log.Printf("Killing unit [%d]", u.ID)
+	}
+	u.Alive = Dead
+	u.Tombstone = NewTombstone(u, reason)
+	return u.Tombstone
 }
 
 // Asexual reproduction is phase one

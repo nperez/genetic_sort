@@ -60,6 +60,7 @@ func main() {
 	if persist, err := genetic_sort.NewPersistence(toolConfig.Persistence); err != nil {
 		log.Fatalf("Failed to create or initialize Persistence: %v", err)
 	} else {
+		defer persist.Shutdown()
 		pop1 := genetic_sort.NewPopulationFromConfig(&popConfig)
 		if id, err := persist.Create(pop1); err != nil {
 			log.Fatalf("Failed to create population: %v", err)

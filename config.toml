@@ -1,4 +1,6 @@
 # Tool Config
+batch_size = 1000
+
 [persistence]
 name = "genetic_sort.db"
 path = './'

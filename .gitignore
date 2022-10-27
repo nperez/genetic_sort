@@ -1,5 +1,6 @@
 .*.swp
 *~
-cmd/addpop/addpop
-cmd/addpop/*.db
-cmd/addpop/*.toml
+**/addpop
+**/rungen
+**/*.toml
+**/*.db

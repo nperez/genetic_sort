@@ -24,8 +24,8 @@ type Instruction struct {
 	UnitID       uint
 	Mutations    []*Mutation
 	Age          uint
-	InitialOpSet string `gorm:"type:blob"`
-	Ops          string `gorm:"type:blob"`
+	InitialOpSet []byte
+	Ops          []byte
 }
 
 type Instructions []*Instruction
@@ -43,15 +43,15 @@ func NewRandomInstruction(opSetCount int) *Instruction {
 		sb.WriteString(bf.PREFAB_OPSETS[rand.Intn(len(bf.PREFAB_OPSETS))])
 	}
 
-	instruction.Ops = string(makeOpsSmall(sb.String()))
-	instruction.InitialOpSet = string(makeOpsSmall(sb.String()))
+	instruction.Ops = makeOpsSmall(sb.String())
+	instruction.InitialOpSet = makeOpsSmall(sb.String())
 	return instruction
 }
 
 func NewInstruction(ops string) *Instruction {
 	instruction := &Instruction{Age: 0}
-	instruction.Ops = string(makeOpsSmall(ops))
-	instruction.InitialOpSet = string(makeOpsSmall(ops))
+	instruction.Ops = makeOpsSmall(ops)
+	instruction.InitialOpSet = makeOpsSmall(ops)
 	return instruction
 }
 
@@ -78,12 +78,8 @@ func (i *Instruction) ToProgram() []byte {
 	return makeOpsBig(i.Ops)
 }
 
-const (
-	DEBUG = false
-)
-
-func makeOpsBig(stuff string) []byte {
-	buffer := bytes.NewBuffer([]byte(stuff))
+func makeOpsBig(stuff []byte) []byte {
+	buffer := bytes.NewBuffer(stuff)
 
 	var sb str.Builder
 

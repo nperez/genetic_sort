@@ -33,10 +33,10 @@ func TestNewSelector(t *test.T) {
 
 func TestSimpleSelect(t *test.T) {
 	s := NewSelector(makeSelectorConfig())
-	result, err := s.Select(&Unit{}, makeEvaluation())
+	result := s.Select(&Unit{}, makeEvaluation())
 
-	if !result {
-		t.Errorf("Selector.Select() unexpected returned false: %v", err)
+	if result != 0 {
+		t.Errorf("Selector.Select() unexpected returned false: %v", result)
 	}
 }
 
@@ -45,35 +45,35 @@ func TestSelectFailures(t *test.T) {
 	ev := makeEvaluation()
 	ev.MachineRun = false
 
-	if result, err := s.Select(&Unit{}, ev); result != false || err != FailedMachineRun {
+	if result := s.Select(&Unit{}, ev); result != FailedMachineRun {
 		t.Errorf("Selector.Select() unexpectedly succeeded at FailedMachineRun")
 	}
 
 	ev = makeEvaluation()
 	ev.SetFidelity = 0
 
-	if result, err := s.Select(&Unit{}, ev); result != false || err != FailedSetFidelity {
+	if result := s.Select(&Unit{}, ev); result != FailedSetFidelity {
 		t.Errorf("Selector.Select() unexpectedly succeeded at FailedSetFidelity")
 	}
 
 	ev = makeEvaluation()
 	ev.Sortedness = 0
 
-	if result, err := s.Select(&Unit{}, ev); result != false || err != FailedSortedness {
+	if result := s.Select(&Unit{}, ev); result != FailedSortedness {
 		t.Errorf("Selector.Select() unexpectedly succeeded at FailedSortedness")
 	}
 
 	ev = makeEvaluation()
 	ev.InstructionCount = 10000
 
-	if result, err := s.Select(&Unit{}, ev); result != false || err != FailedInstructionCount {
+	if result := s.Select(&Unit{}, ev); result != FailedInstructionCount {
 		t.Errorf("Selector.Select() unexpectedly succeeded at FailedInstructionCount")
 	}
 
 	ev = makeEvaluation()
 	ev.InstructionsExecuted = 100000
 
-	if result, err := s.Select(&Unit{}, ev); result != false || err != FailedInstructionsExecuted {
+	if result := s.Select(&Unit{}, ev); result != FailedInstructionsExecuted {
 		t.Errorf("Selector.Select() unexpectedly succeeded at FailedInstructionsExecuted")
 	}
 }

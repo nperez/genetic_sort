@@ -1,6 +1,4 @@
 # Tool Config
-batch_size = 1000
-
 [persistence]
 name = "genetic_sort.db"
 path = './'
@@ -11,3 +9,4 @@ pragmas = [
 options = [
     "cache=shared"
 ]
+batch_size = 1000

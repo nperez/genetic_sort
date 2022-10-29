@@ -61,11 +61,11 @@ func main() {
 		log.Fatalf("Failed to create or initialize Persistence: %v", err)
 	} else {
 		defer persist.Shutdown()
-		pop1 := genetic_sort.NewPopulationFromConfig(&popConfig)
-		if id, err := persist.Create(pop1); err != nil {
+		if pop, err := persist.Create(&popConfig); err != nil {
 			log.Fatalf("Failed to create population: %v", err)
 		} else {
-			fmt.Printf("%d\n", id)
+			pop.SynthesizeUnits()
+			fmt.Printf("%d\n", pop.ID)
 		}
 	}
 }

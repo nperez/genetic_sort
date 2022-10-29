@@ -7,7 +7,7 @@ import (
 
 type Processor struct {
 	Input     UnitLoader
-	Output    chan<- *Unit
+	Persistor UnitPersistor
 	Evaluator *Evaluator
 	Selector  *Selector
 }
@@ -30,19 +30,19 @@ FOR:
 				if reason != 0 {
 					unit.Die(reason)
 				}
-				p.Output <- unit
 			}
+			p.Persistor(&units)
 		case <-ctx.Done():
 			break FOR
 		}
 	}
 }
 
-func NewProcessor(loader UnitLoader, output chan<- *Unit, evaluator *Evaluator, selector *Selector) *Processor {
+func NewProcessor(loader UnitLoader, persistor UnitPersistor, evaluator *Evaluator, selector *Selector) *Processor {
 	return &Processor{
 		Input:     loader,
 		Evaluator: evaluator,
 		Selector:  selector,
-		Output:    output,
+		Persistor: persistor,
 	}
 }

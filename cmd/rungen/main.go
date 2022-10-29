@@ -1,8 +1,8 @@
 package main
 
 import (
-	"context"
 	"flag"
+	"fmt"
 	"log"
 	"os"
 
@@ -38,52 +38,12 @@ func main() {
 		if pop1, err := persist.LoadShallow(*popId); err != nil {
 			log.Fatalf("Unable to load population from DB: %v", err)
 		} else {
-			loaders := persist.GetUnitLoaders(pop1, toolConfig.BatchSize)
-			evaluator := genetic_sort.NewEvaluator(pop1.PopulationConfig.EvaluatorConfig)
-			selector := genetic_sort.NewSelector(pop1.PopulationConfig.SelectorConfig)
-			engine := genetic_sort.NewGenerationEngine(loaders, evaluator, selector)
-
-			ctx, _ := context.WithCancel(context.Background())
-			go engine.Run(ctx)
-
-			batch := make([]*genetic_sort.Unit, toolConfig.BatchSize)
-			index := uint(0)
-		FOR:
-			for {
-				select {
-				case unit := <-engine.Output:
-					if unit == nil {
-						if batch[0] != nil {
-							if genetic_sort.DEBUG {
-								log.Printf("Persisting unit batch")
-							}
-							if err := persist.UpdateUnits(&batch); err != nil {
-								log.Fatalf("Persisting batch of units failed: %v", err)
-							}
-						}
-						break FOR
-					}
-
-					batch[index] = unit
-					index++
-					if index == toolConfig.BatchSize {
-						if genetic_sort.DEBUG {
-							log.Printf("Persisting unit batch")
-						}
-						if err := persist.UpdateUnits(&batch); err != nil {
-							log.Fatalf("Persisting batch of units failed: %v", err)
-						} else {
-							for i := range batch {
-								batch[i] = nil
-							}
-						}
-						index = 0
-					}
-				case <-ctx.Done():
-					break FOR
-				}
+			if pop1.GetAliveCount() == 0 {
+				log.Fatalf("Population [%d] has no living units", pop1.ID)
 			}
+			pop1.ProcessGeneration()
 
+			fmt.Printf("Population [%d] unit count: %d\n", pop1.ID, pop1.GetAliveCount())
 		}
 	}
 

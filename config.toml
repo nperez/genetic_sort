@@ -3,6 +3,9 @@
 name = "genetic_sort.db"
 path = './'
 pragmas = [
+    "threads=6",
+    "mmap_size=268435456",
+    "synchronous=OFF",
     "journal_mode=WAL",
     "journal_size=4000000"
 ]

@@ -10,13 +10,15 @@ import (
 	sqlite "github.com/glebarez/sqlite"
 	gorm "gorm.io/gorm"
 	"gorm.io/gorm/clause"
+	"gorm.io/gorm/logger"
 )
 
 type PersistenceConfig struct {
-	Name          string
-	Path          string
-	SQLitePragmas []string
-	SQLiteOptions []string
+	Name          string   `toml:"name"`
+	Path          string   `toml:"path"`
+	SQLitePragmas []string `toml:"pragmas"`
+	SQLiteOptions []string `toml:"options"`
+	BatchSize     uint     `toml:"batch_size"`
 }
 
 type Persistence struct {
@@ -37,36 +39,41 @@ func NewPersistence(config *PersistenceConfig) (*Persistence, error) {
 		return nil, fmt.Errorf("Name of database must be defined")
 	}
 
-	var pragmas strings.Builder
-	pragma_count := len(config.SQLitePragmas) - 1
-	for i, prag := range config.SQLitePragmas {
-		pragmas.WriteString(fmt.Sprintf("_pragma=%s", prag))
-		if i < pragma_count {
-			pragmas.WriteRune('&')
-		}
-	}
-
-	var options strings.Builder
-	option_count := len(config.SQLiteOptions) - 1
-	for i, opt := range config.SQLiteOptions {
-		pragmas.WriteString(opt)
-		if i < option_count {
-			options.WriteRune('&')
-		}
-	}
-
 	var path strings.Builder
+	path.WriteString("file:")
 	path.WriteString(filepath.Join(config.Path, config.Name))
-	if pragmas.Len() > 0 {
+
+	var query bool
+
+	if len(config.SQLitePragmas) > 0 {
 		path.WriteRune('?')
-		path.WriteString(pragmas.String())
-		if options.Len() > 0 {
-			path.WriteRune('&')
-			path.WriteString(options.String())
+		query = true
+		pragma_count := len(config.SQLitePragmas) - 1
+		for i, prag := range config.SQLitePragmas {
+			path.WriteString(fmt.Sprintf("_pragma=%s", prag))
+			if i < pragma_count {
+				path.WriteRune('&')
+			}
 		}
-	} else if options.Len() > 0 {
-		path.WriteRune('?')
-		path.WriteString(options.String())
+	}
+
+	if len(config.SQLiteOptions) > 0 {
+		if !query {
+			path.WriteRune('?')
+		} else {
+			path.WriteRune('&')
+		}
+		option_count := len(config.SQLiteOptions) - 1
+		for i, opt := range config.SQLiteOptions {
+			path.WriteString(opt)
+			if i < option_count {
+				path.WriteRune('&')
+			}
+		}
+	}
+
+	if DEBUG {
+		log.Printf("Opening: %s", path.String())
 	}
 
 	db, err := gorm.Open(sqlite.Open(path.String()), &gorm.Config{})
@@ -75,7 +82,12 @@ func NewPersistence(config *PersistenceConfig) (*Persistence, error) {
 		return nil, err
 	}
 
-	db = db.Session(&gorm.Session{PrepareStmt: true, CreateBatchSize: 1000})
+	db = db.Session(&gorm.Session{
+		PrepareStmt:            true,
+		CreateBatchSize:        int(config.BatchSize),
+		SkipDefaultTransaction: true,
+		Logger:                 logger.Default.LogMode(logger.Silent),
+	})
 
 	p := &Persistence{Config: config, DB: db}
 	if err = p.initialize(); err != nil {
@@ -108,16 +120,20 @@ func (p *Persistence) Shutdown() {
 	}
 }
 
-func (p *Persistence) Create(pop *Population) (uint, error) {
-	if pop == nil {
-		return 0, fmt.Errorf("Population cannot be nil")
+func (p *Persistence) Create(config *PopulationConfig) (*Population, error) {
+	if config == nil {
+		return nil, fmt.Errorf("PopulationConfig cannot be nil")
 	}
+
+	pop := NewPopulationFromConfig(config)
 
 	if result := p.DB.Create(pop); result.Error != nil {
-		return 0, fmt.Errorf("Failed to call gorm.Create(): %w", result.Error)
+		return nil, fmt.Errorf("Failed to call gorm.Create(): %w", result.Error)
 	}
 
-	return pop.ID, nil
+	pop.persist = p
+
+	return pop, nil
 
 }
 
@@ -131,20 +147,14 @@ func (p *Persistence) LoadShallow(id uint) (*Population, error) {
 	if pop.ID == 0 {
 		return nil, fmt.Errorf("Population id [%d] not found", id)
 	}
+
+	pop.persist = p
+
 	return pop, nil
 }
 
-/*
-	Figure out how to make sure all unit associations are updated. Right now, units are missing evaluations
-*/
+func (p *Persistence) SaveUnits(units *[]*Unit) error {
 
-func (p *Persistence) UpdateUnits(units *[]*Unit) error {
-
-	for _, unit := range *units {
-		if len(unit.Evaluations) == 0 {
-			log.Fatalf("Missing evaluation")
-		}
-	}
 	tx := p.DB.Session(&gorm.Session{FullSaveAssociations: true})
 	tx.Save(*units)
 	if tx.Error != nil {
@@ -152,6 +162,16 @@ func (p *Persistence) UpdateUnits(units *[]*Unit) error {
 	}
 
 	return nil
+}
+
+type UnitPersistor func(*[]*Unit)
+
+func (p *Persistence) GetUnitPersistor() UnitPersistor {
+	return func(units *[]*Unit) {
+		if err := p.SaveUnits(units); err != nil {
+			log.Fatalf("Persisting batch of units failed: %v", err)
+		}
+	}
 }
 
 type UnitLoader func(id, total uint) <-chan []*Unit

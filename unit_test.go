@@ -1,11 +1,7 @@
 package genetic_sort
 
 import (
-	//bf "nickandperla.net/brainfuck"
-	rnd "math/rand"
 	mop "reflect"
-	//re "regexp"
-	//str "strings"
 	test "testing"
 )
 
@@ -13,7 +9,7 @@ var SEED42_INSTRUCTION_STRING string = `*[>]^[-^+^][<]>*[>]^<[-^+^]>[-<+>]^[-^+^
 
 func TestNewUnitFuncs(t *test.T) {
 	// Fixed seed to get determinent results
-	rnd.Seed(42)
+	rng = newPooledRand(42)
 	config := &UnitConfig{
 		MutationChance:    0.25,
 		InstructionCount:  10,
@@ -22,9 +18,9 @@ func TestNewUnitFuncs(t *test.T) {
 
 	unit1 := NewUnitFromConfig(config)
 
-	if SEED42_INSTRUCTION_STRING != unit1.Instructions.ToProgram() {
+	if SEED42_INSTRUCTION_STRING != Instructions(unit1.Instructions).ToProgram() {
 		t.Errorf("Unit instructions do not match expected:\nExpected: %v\nActual: %v ",
-			SEED42_INSTRUCTION_STRING, unit1.Instructions.ToProgram())
+			SEED42_INSTRUCTION_STRING, Instructions(unit1.Instructions).ToProgram())
 	}
 
 	if len(unit1.Instructions) != 10 {
@@ -37,7 +33,7 @@ func TestNewUnitFuncs(t *test.T) {
 }
 
 func TestUnitClone(t *test.T) {
-	rnd.Seed(42)
+	rng = newPooledRand(42)
 
 	config := &UnitConfig{
 		MutationChance:    0.25,
@@ -49,9 +45,9 @@ func TestUnitClone(t *test.T) {
 
 	unit2 := unit1.Clone()
 
-	if SEED42_INSTRUCTION_STRING != unit2.Instructions.ToProgram() {
+	if SEED42_INSTRUCTION_STRING != Instructions(unit2.Instructions).ToProgram() {
 		t.Errorf("Unit instructions do not match expected:\nExpected: %v\nActual: %v ",
-			SEED42_INSTRUCTION_STRING, unit2.Instructions.ToProgram())
+			SEED42_INSTRUCTION_STRING, Instructions(unit2.Instructions).ToProgram())
 	}
 
 	if len(unit2.Instructions) != 10 {
@@ -68,7 +64,7 @@ func TestUnitClone(t *test.T) {
 }
 
 func TestMitosis(t *test.T) {
-	rnd.Seed(42)
+	rng = newPooledRand(42)
 
 	config := &UnitConfig{
 		MutationChance:    0.25,
@@ -78,7 +74,7 @@ func TestMitosis(t *test.T) {
 
 	unit1 := NewUnitFromConfig(config)
 
-	unit2 := unit1.Mitosis()
+	unit2 := unit1.Mitosis(nil, nil)
 
 	if mop.DeepEqual(unit1, unit2) {
 		t.Errorf("Unexpected DeepEqual between original and offspring units from Mitosis()")
@@ -92,6 +88,6 @@ func TestMitosis(t *test.T) {
 	}
 
 	if !mop.DeepEqual(expectedMutations, actualMutations) {
-		t.Errorf("Unexpected gene mutations from calling Unit.Mitosis()\nExpected: %v\nActual:%v", expectedMutations, actualMutations)
+		t.Errorf("Unexpected gene mutations from calling Unit.Mitosis(nil, nil)\nExpected: %v\nActual:%v", expectedMutations, actualMutations)
 	}
 }

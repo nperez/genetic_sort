@@ -3,7 +3,6 @@ package genetic_sort
 import (
 	"log"
 	"math"
-	"math/rand"
 
 	bf "nickandperla.net/brainfuck"
 )
@@ -26,14 +25,31 @@ type Evaluation struct {
 	InstructionCount     uint
 	InstructionsExecuted uint
 	MachineError         *string
-	Input                []uint8 `gorm:"type:blob"`
-	Output               []uint8 `gorm:"type:blob"`
 }
 
 type EvaluatorConfig struct {
-	MachineConfig   *bf.MachineConfig `gorm:"embedded" toml:"machine"`
-	InputCellCount  uint              `toml:"input_cell_count"`
-	OutputCellCount uint              `toml:"output_cell_count"`
+	MachineConfig           *bf.MachineConfig `toml:"machine"`
+	InputCellCount          uint              `toml:"input_cell_count"`
+	OutputCellCount         uint              `toml:"output_cell_count"`
+	SynthesisInputCellCount uint              `toml:"synthesis_input_cell_count"`
+	InputCellStart          uint              `toml:"input_cell_start"`
+	InputCellStep           uint              `toml:"input_cell_step"`
+	EvalRounds              uint              `toml:"eval_rounds"`
+}
+
+// ComputeEffectiveInputCellCount returns the input cell count to use for a
+// given generation, implementing curriculum learning. If InputCellStart is 0,
+// it returns InputCellCount unchanged. Otherwise it grows from InputCellStart
+// by 1 every InputCellStep generations, capped at InputCellCount.
+func (ec *EvaluatorConfig) ComputeEffectiveInputCellCount(generation uint) uint {
+	if ec.InputCellStart == 0 || ec.InputCellStep == 0 {
+		return ec.InputCellCount
+	}
+	effective := ec.InputCellStart + generation/ec.InputCellStep
+	if effective > ec.InputCellCount {
+		return ec.InputCellCount
+	}
+	return effective
 }
 
 type Evaluator struct {
@@ -49,10 +65,6 @@ func NewEvaluator(ec *EvaluatorConfig) *Evaluator {
 }
 
 func (e *Evaluator) Evaluate(u *Unit) *Evaluation {
-	if u.ID == 0 {
-		log.Fatalf("Unit must be persisted prior to evaluation")
-	}
-
 	eval := &Evaluation{
 		UnitID: u.ID,
 	}
@@ -106,8 +118,6 @@ func (e *Evaluator) Evaluate(u *Unit) *Evaluation {
 	}
 
 	eval.Sortedness = byte(-(int((float32(inversions)/float32(maxInversions))*100) - 100))
-	eval.Input = input
-	eval.Output = output
 	eval.InstructionsExecuted = e.Machine.InstructionCount
 	eval.InstructionCount = uint(len(Instructions(u.Instructions).ToProgram()))
 
@@ -116,10 +126,170 @@ func (e *Evaluator) Evaluate(u *Unit) *Evaluation {
 	return eval
 }
 
+// Fitness returns a composite fitness score for ranking during synthesis.
+// MachineRun is not gated — a program that timed out may still have
+// done useful work in memory.
+func (e *Evaluation) Fitness() uint {
+	return uint(e.SetFidelity) + uint(e.Sortedness)
+}
+
+// EvaluateWithCellCounts runs evaluation using the given input/output cell
+// counts instead of the ones from Config. Used during synthesis with
+// smaller inputs.
+func (e *Evaluator) EvaluateWithCellCounts(u *Unit, inputCells, outputCells uint) *Evaluation {
+	eval := &Evaluation{
+		UnitID: u.ID,
+	}
+
+	input := makeRandomInput(inputCells)
+	e.Machine.LoadProgram(Instructions(u.Instructions).ToProgram())
+	if ok, err := e.Machine.LoadMemory(input); !ok {
+		log.Fatalf("Failed to load memory into machine. %v", err)
+	}
+
+	if ok, err := e.Machine.Run(); !ok {
+		if err != nil {
+			var msg string = err.Error()
+			eval.MachineError = &msg
+		}
+	} else {
+		eval.MachineRun = true
+	}
+
+	ok, output, err := e.Machine.ReadMemory(outputCells)
+
+	if !ok {
+		log.Fatalf("Failed to read memory. Check MachineConfig.MemoryConfig.CellCount and EvaluatorConfig.OutputCellCount. %v", err)
+	}
+
+	copyOutput := make([]uint8, len(output))
+	copy(copyOutput, output)
+
+	inMap := make(map[uint8]bool)
+	outMap := make(map[uint8]bool)
+
+	for g := 0; g < len(input); g++ {
+		inMap[input[g]] = true
+		outMap[output[g]] = true
+	}
+
+	total, count := 0, 0
+	for k, _ := range inMap {
+		total++
+		if _, ok := outMap[k]; ok {
+			count++
+		}
+	}
+	rawFidelity := float32(count) / float32(total) * 100
+
+	inversions := merge_sort(copyOutput)
+	maxInversions := uint(len(copyOutput) * (len(copyOutput) - 1) / 2)
+
+	if DEBUG {
+		log.Printf("Inversions: %v\nMax Inversions: %v", inversions, maxInversions)
+	}
+
+	rawSortedness := float32(-(int((float32(inversions)/float32(maxInversions))*100) - 100))
+
+	// Scale scores by inputCells/maxInputCells so difficulty reflects input size
+	scale := float32(inputCells) / float32(e.Config.InputCellCount)
+	eval.SetFidelity = byte(uint(rawFidelity * scale))
+	eval.Sortedness = byte(uint(rawSortedness * scale))
+	eval.InstructionsExecuted = e.Machine.InstructionCount
+	eval.InstructionCount = uint(len(Instructions(u.Instructions).ToProgram()))
+
+	u.Evaluations = append(u.Evaluations, eval)
+
+	return eval
+}
+
+// EvaluateMultiRound runs EvalRounds evaluations with different random inputs
+// and keeps only the worst result (lowest Fitness). Forces programs to be
+// robust across inputs rather than getting lucky on one.
+func (e *Evaluator) EvaluateMultiRound(u *Unit, rounds uint) *Evaluation {
+	return e.evaluateMultiRound(u, rounds, e.Config.InputCellCount, e.Config.OutputCellCount)
+}
+
+// EvaluateMultiRoundWithCellCounts is like EvaluateMultiRound but with custom cell counts.
+func (e *Evaluator) EvaluateMultiRoundWithCellCounts(u *Unit, rounds, inputCells, outputCells uint) *Evaluation {
+	return e.evaluateMultiRound(u, rounds, inputCells, outputCells)
+}
+
+func (e *Evaluator) evaluateMultiRound(u *Unit, rounds, inputCells, outputCells uint) *Evaluation {
+	var worst *Evaluation
+	var worstFitness uint = math.MaxUint64
+
+	program := Instructions(u.Instructions).ToProgram()
+	instrCount := uint(len(program))
+
+	for r := uint(0); r < rounds; r++ {
+		eval := &Evaluation{UnitID: u.ID}
+
+		input := makeRandomInput(inputCells)
+		e.Machine.LoadProgram(program)
+		if ok, err := e.Machine.LoadMemory(input); !ok {
+			log.Fatalf("Failed to load memory into machine. %v", err)
+		}
+
+		if ok, err := e.Machine.Run(); !ok {
+			if err != nil {
+				var msg string = err.Error()
+				eval.MachineError = &msg
+			}
+		} else {
+			eval.MachineRun = true
+		}
+
+		ok, output, err := e.Machine.ReadMemory(outputCells)
+		if !ok {
+			log.Fatalf("Failed to read memory. %v", err)
+		}
+
+		copyOutput := make([]uint8, len(output))
+		copy(copyOutput, output)
+
+		inMap := make(map[uint8]bool)
+		outMap := make(map[uint8]bool)
+		for g := 0; g < len(input); g++ {
+			inMap[input[g]] = true
+			outMap[output[g]] = true
+		}
+
+		total, count := 0, 0
+		for k := range inMap {
+			total++
+			if _, ok := outMap[k]; ok {
+				count++
+			}
+		}
+		rawFidelity := float32(count) / float32(total) * 100
+
+		inversions := merge_sort(copyOutput)
+		maxInversions := uint(len(copyOutput) * (len(copyOutput) - 1) / 2)
+		rawSortedness := float32(-(int((float32(inversions)/float32(maxInversions))*100) - 100))
+
+		// Scale scores by inputCells/maxInputCells so difficulty reflects input size
+		scale := float32(inputCells) / float32(e.Config.InputCellCount)
+		eval.SetFidelity = byte(uint(rawFidelity * scale))
+		eval.Sortedness = byte(uint(rawSortedness * scale))
+		eval.InstructionsExecuted = e.Machine.InstructionCount
+		eval.InstructionCount = instrCount
+
+		fitness := eval.Fitness()
+		if fitness < worstFitness {
+			worstFitness = fitness
+			worst = eval
+		}
+	}
+
+	u.Evaluations = append(u.Evaluations, worst)
+	return worst
+}
+
 func makeRandomInput(count uint) []uint8 {
 	ret := make([]uint8, count)
 	for i := uint(0); i < count; i++ {
-		ret[i] = uint8(rand.Intn(int(math.MaxUint8)))
+		ret[i] = uint8(rng.Intn(int(math.MaxUint8)))
 	}
 	return ret
 }

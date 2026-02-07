@@ -1,7 +1,17 @@
-# Population Config
-unit_count = 100
+# Population Config — large competitive run
+unit_count = 10000
+# synthesis_pool is no longer used — synthesis runs until unit_count
+# viable units are found
+synthesis_pool = 0
+# Hard cap after competitive culling each generation
+carrying_capacity = 2000000
+# Top 1000 units immune from competitive culling
+elitism = 1000
+# Best survivors get up to 3 offspring, worst get 1
+max_offspring = 3
+
 [unit]
-lifespan = 100
+lifespan = 200
 mutation_chance = 0.25
 instruction_count = 10
 [unit.instruction]
@@ -10,13 +20,27 @@ op_set_count = 10
 [eval]
 input_cell_count = 10
 output_cell_count = 10
+# Smaller input for synthesis so random programs can produce useful output
+synthesis_input_cell_count = 2
+# Curriculum: start evaluating with 2 input cells, grow by 1 every 50 gens
+input_cell_start = 2
+input_cell_step = 50
+eval_rounds = 3
 [eval.machine]
 max_instruction_execution_count = 10000
-memory_cell_count = 20
+memory_cell_count = 30
 
 [select]
-machine_run = true
-set_fidelity = 50
-sortedness = 50
-instruction_count = 100
+# Don't require a clean machine run — timed-out programs may still sort
+machine_run = false
+# Lenient thresholds — let competitive culling do the real selection
+set_fidelity = 1
+sortedness = 1
+instruction_count = 5000
 instructions_executed = 10000
+
+# Sortedness is king, then set fidelity, then efficiency
+[fitness]
+sortedness_priority = 1
+set_fidelity_priority = 2
+efficiency_priority = 3

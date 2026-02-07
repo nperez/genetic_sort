@@ -2,7 +2,6 @@ package genetic_sort
 
 import (
 	"log"
-	rnd "math/rand"
 	test "testing"
 
 	bf "nickandperla.net/brainfuck"
@@ -37,7 +36,7 @@ func TestNewEvaluator(t *test.T) {
 }
 
 func TestEvaluate(t *test.T) {
-	rnd.Seed(42)
+	rng = newPooledRand(42)
 	evaluator, unit := makeEvaluatorAndUnit()
 
 	if evaluator == nil {
@@ -71,8 +70,8 @@ func TestEvaluate(t *test.T) {
 		t.Errorf("Unexpected SetFidelity: [%v], expected: 80", result.SetFidelity)
 	}
 
-	if result.Sortedness != 38 {
-		t.Errorf("Unexpected Sortedness: [%v], expected: 38", result.Sortedness)
+	if result.Sortedness != 32 {
+		t.Errorf("Unexpected Sortedness: [%v], expected: 32", result.Sortedness)
 	}
 
 	if result.InstructionsExecuted != 157 {
@@ -81,6 +80,49 @@ func TestEvaluate(t *test.T) {
 
 	log.Printf("Evaluation: %v", result)
 
+}
+
+func TestComputeEffectiveInputCellCount(t *test.T) {
+	ec := &EvaluatorConfig{InputCellCount: 10}
+
+	// No curriculum (InputCellStart == 0): always returns InputCellCount
+	if got := ec.ComputeEffectiveInputCellCount(0); got != 10 {
+		t.Errorf("Expected 10, got %d", got)
+	}
+	if got := ec.ComputeEffectiveInputCellCount(100); got != 10 {
+		t.Errorf("Expected 10, got %d", got)
+	}
+
+	// InputCellStep == 0 but InputCellStart != 0: no growth, returns InputCellCount
+	ec.InputCellStart = 2
+	ec.InputCellStep = 0
+	if got := ec.ComputeEffectiveInputCellCount(50); got != 10 {
+		t.Errorf("Expected 10 (step=0 disables curriculum), got %d", got)
+	}
+
+	// Curriculum enabled: start=2, step=5, max=10
+	ec.InputCellStart = 2
+	ec.InputCellStep = 5
+	// gen 0: 2 + 0/5 = 2
+	if got := ec.ComputeEffectiveInputCellCount(0); got != 2 {
+		t.Errorf("Gen 0: expected 2, got %d", got)
+	}
+	// gen 4: 2 + 4/5 = 2
+	if got := ec.ComputeEffectiveInputCellCount(4); got != 2 {
+		t.Errorf("Gen 4: expected 2, got %d", got)
+	}
+	// gen 5: 2 + 5/5 = 3
+	if got := ec.ComputeEffectiveInputCellCount(5); got != 3 {
+		t.Errorf("Gen 5: expected 3, got %d", got)
+	}
+	// gen 40: 2 + 40/5 = 10
+	if got := ec.ComputeEffectiveInputCellCount(40); got != 10 {
+		t.Errorf("Gen 40: expected 10, got %d", got)
+	}
+	// gen 100: capped at 10
+	if got := ec.ComputeEffectiveInputCellCount(100); got != 10 {
+		t.Errorf("Gen 100: expected 10 (capped), got %d", got)
+	}
 }
 
 func TestSortedness(t *test.T) {

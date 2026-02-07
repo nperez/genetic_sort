@@ -57,6 +57,8 @@ func main() {
 
 	popfile.Close()
 
+	genetic_sort.InitRNG(toolConfig.Persistence.Seed)
+
 	if persist, err := genetic_sort.NewPersistence(toolConfig.Persistence); err != nil {
 		log.Fatalf("Failed to create or initialize Persistence: %v", err)
 	} else {
@@ -64,7 +66,9 @@ func main() {
 		if pop, err := persist.Create(&popConfig); err != nil {
 			log.Fatalf("Failed to create population: %v", err)
 		} else {
-			pop.SynthesizeUnits()
+			if err := pop.SynthesizeUnits(); err != nil {
+				log.Fatalf("Synthesis failed: %v", err)
+			}
 			fmt.Printf("%d\n", pop.ID)
 		}
 	}

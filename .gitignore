@@ -2,5 +2,8 @@
 *~
 **/addpop
 **/rungen
+**/prune
+**/optimize
 **/*.toml
 **/*.db
+**/plots

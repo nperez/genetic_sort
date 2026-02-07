@@ -1,6 +1,7 @@
 package genetic_sort
 
 import (
+	"bytes"
 	bf "nickandperla.net/brainfuck"
 	mop "reflect"
 	re "regexp"
@@ -25,8 +26,8 @@ func TestNewInstruction(t *testing.T) {
 		}
 	}
 
-	if instruct1.InitialOpSet != instruct1.Ops {
-		t.Errorf("InitialOpSet and Ops disagree. InitialOpSet: [%v], Ops: [%v]", []byte(instruct1.InitialOpSet), []byte(instruct1.Ops))
+	if !bytes.Equal(instruct1.InitialOpSet, instruct1.Ops) {
+		t.Errorf("InitialOpSet and Ops disagree. InitialOpSet: [%v], Ops: [%v]", instruct1.InitialOpSet, instruct1.Ops)
 	}
 }
 
@@ -71,7 +72,7 @@ func TestInstructionStringer(t *testing.T) {
 			len(str2), len(instruct2.Ops))
 	}
 
-	if str1 != str2 {
+	if !bytes.Equal(str1, str2) {
 		t.Errorf("Cloned instructions .String() do not match:\ninstruct1: [%v]\ninstruct2: [%v]",
 			str1, str2)
 	}
@@ -98,7 +99,7 @@ func TestInstructionAge(t *testing.T) {
 func TestMakeOpsSmallAndBig(t *testing.T) {
 	ops := bf.MOVE_TO_ZERO_LEFT
 	compressed := makeOpsSmall(ops)
-	uncompressed := makeOpsBig(string(compressed))
+	uncompressed := makeOpsBig(compressed)
 
 	if !mop.DeepEqual(ops, string(uncompressed)) {
 		t.Errorf("Failed to roundtrip Ops for database encoding.\nOrig: %v\nCompressed: %v\nUncompressed: %v\n",

@@ -37,6 +37,8 @@ func (m *Machine) LoadProgram(instructions string) {
 		m.Tape.Instructions = instructions
 		m.Tape.Reset()
 	}
+	m.Memory.Reset()
+	m.InstructionCount = 0
 }
 
 func (m *Machine) LoadMemory(input []uint8) (bool, error) {

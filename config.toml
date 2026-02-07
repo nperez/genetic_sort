@@ -2,6 +2,9 @@
 [persistence]
 name = "genetic_sort.db"
 path = './'
+# seed = 0 means use current time (non-deterministic). Set to a
+# non-zero value for reproducible runs.
+seed = 0
 pragmas = [
     "threads=6",
     "mmap_size=268435456",
@@ -13,3 +16,5 @@ options = [
     "cache=shared"
 ]
 batch_size = 1000
+eval_batch_size = 10000
+shard_count = 12

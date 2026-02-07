@@ -2,7 +2,6 @@ package genetic_sort
 
 import (
 	"fmt"
-	"math/rand"
 
 	bf "nickandperla.net/brainfuck"
 )
@@ -35,47 +34,60 @@ func (m *Mutation) String() string {
 
 func NewMutation(chance float32) *Mutation {
 	m := &Mutation{
-		MetaOP: META_OP_SET[rand.Intn(len(META_OP_SET))],
-		Op:     bf.OP_SET[rand.Intn(len(bf.OP_SET))],
+		MetaOP: META_OP_SET[rng.Intn(len(META_OP_SET))],
+		Op:     bf.OP_SET[rng.Intn(len(bf.OP_SET))],
 		Chance: chance,
 	}
 	return m
 }
 
+// Apply mutates the instruction's ops in decompressed form.
+// Does NOT recompress — sets Ops=nil so EnsureCompressed will repack on demand
+// (only needed for DB persistence). This avoids makeOpsSmall in the hot path.
 func (m *Mutation) Apply(i *Instruction) {
-	length := len(i.Ops)
-	pos1, pos2 := uint(rand.Intn(length)), uint(rand.Intn(length))
+	i.EnsureDecompressed()
+	raw := i.cachedOps
+	length := len(raw)
+	if length == 0 {
+		i.Mutations = append(i.Mutations, m)
+		return
+	}
+	pos1, pos2 := uint(rng.Intn(length)), uint(rng.Intn(length))
 
 	switch m.MetaOP {
 	case PUSH_OP:
-		i.Ops = append(i.Ops, m.Op)
+		raw = append(raw, m.Op)
 	case POP_OP:
-		i.Ops = i.Ops[:len(i.Ops)-1]
+		raw = raw[:len(raw)-1]
 	case SHIFT_OP:
-		i.Ops = i.Ops[1:]
+		raw = raw[1:]
 	case UNSHIFT_OP:
-		i.Ops = append([]byte{m.Op}, i.Ops...)
+		raw = append([]byte{m.Op}, raw...)
 	case INSERT_OP:
 		index := pos1
-		first := i.Ops[:index]
-		second := i.Ops[index:]
+		first := make([]byte, index)
+		copy(first, raw[:index])
+		second := raw[index:]
 		temp := append(first, m.Op)
-		i.Ops = append(temp, second...)
+		raw = append(temp, second...)
 		m.Position1 = &pos1
 	case DELETE_OP:
 		index := pos1
-		first := i.Ops[:index]
-		second := i.Ops[index+1:]
-		i.Ops = append(first, second...)
+		first := make([]byte, index)
+		copy(first, raw[:index])
+		second := raw[index+1:]
+		raw = append(first, second...)
 		m.Position1 = &pos1
 	case SWAP_OP:
-		i.Ops[pos1], i.Ops[pos2] = i.Ops[pos2], i.Ops[pos1]
+		raw[pos1], raw[pos2] = raw[pos2], raw[pos1]
 		m.Position1 = &pos1
 		m.Position2 = &pos2
 	case REPLACE_OP:
-		i.Ops[pos1] = m.Op
+		raw[pos1] = m.Op
 		m.Position1 = &pos1
 	}
 
+	i.cachedOps = raw
+	i.Ops = nil // mark compressed form as stale
 	i.Mutations = append(i.Mutations, m)
 }
